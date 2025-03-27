@@ -94,5 +94,135 @@ Parce que gérer les secrets dans un projet fullstack, c’est :
 ```
 
 ---
+## 🛠️ Installation
+
+SmartLocker peut être installé sur **Linux** et **Windows**. Voici les différentes méthodes d'installation, adaptées à vos besoins.
+
+---
+
+### 📦 Installation automatisée
+
+#### **Linux (via script Bash)**
+
+Exécutez le script suivant pour télécharger, compiler et installer SmartLocker :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/username/smart-locker/main/install.sh | bash
+```
+
+Ce script :
+1. Vérifie que **Rust** est installé.
+2. Clone le dépôt GitHub.
+3. Compile le projet en mode `release`.
+4. Installe le binaire dans `/usr/local/bin`.
+
+#### **Windows (via PowerShell)**
+
+Exécutez cette commande dans PowerShell pour télécharger et installer SmartLocker :
+
+```powershell
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/username/smart-locker/main/install.ps1 -OutFile install.ps1; ./install.ps1
+```
+
+Ce script :
+1. Vérifie que **Rust** est installé.
+2. Clone le dépôt GitHub.
+3. Compile le projet en mode `release`.
+4. Copie le binaire dans un dossier accessible via le `PATH`.
+
+---
+
+### 🛠️ Installation manuelle
+
+#### **Linux**
+
+1. Assurez-vous que **Rust** est installé :
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   ```
+
+2. Clonez le dépôt :
+   ```bash
+   git clone https://github.com/username/smart-locker.git
+   cd smart-locker
+   ```
+
+3. Compilez le projet en mode `release` :
+   ```bash
+   cargo build --release
+   ```
+
+4. Installez le binaire dans `/usr/local/bin` :
+   ```bash
+   sudo cp target/release/smart-locker /usr/local/bin/
+   ```
+
+5. Vérifiez l'installation :
+   ```bash
+   smart-locker --version
+   ```
+
+#### **Windows**
+
+1. Installez **Rust** via [rustup](https://rustup.rs/).
+
+2. Clonez le dépôt :
+   ```powershell
+   git clone https://github.com/username/smart-locker.git
+   cd smart-locker
+   ```
+
+3. Compilez le projet en mode `release` :
+   ```powershell
+   cargo build --release
+   ```
+
+4. Ajoutez le binaire au `PATH` :
+   ```powershell
+   $Env:Path += ";$PWD\target\release"
+   ```
+
+5. Vérifiez l'installation :
+   ```powershell
+   smart-locker --version
+   ```
+
+---
+
+### 🦀 Icône Rust pour l'identité
+
+Pour renforcer l'identité visuelle de SmartLocker, vous pouvez utiliser un petit icône Rust dans vos binaires. Voici comment l'ajouter :
+
+1. Installez [`rust-embed`](https://github.com/pyros2097/rust-embed) pour inclure des ressources dans votre binaire.
+2. Ajoutez un fichier SVG ou PNG représentant l'icône Rust dans votre projet.
+3. Modifiez votre code pour inclure l'icône dans les messages d'aide ou d'exécution.
+
+Exemple d'ajout d'un icône dans les messages d'aide :
+
+```rust
+println!("{}", "🦀 SmartLocker - Sécurisez vos secrets avec Rust !".bold().green());
+```
+
+---
+
+### 📦 Packages précompilés (à venir)
+
+Nous prévoyons de fournir des **binaires précompilés** pour les principales plateformes (Linux, Windows, macOS). Vous pourrez les télécharger directement depuis la page [Releases](https://github.com/username/smart-locker/releases).
+
+---
+
+### 🧪 Tester l'installation
+
+Une fois installé, testez SmartLocker avec les commandes suivantes :
+
+```bash
+smart-locker init
+smart-locker encrypt -n my_secret -v "Ceci est un test"
+smart-locker decrypt -n my_secret
+```
+
+---
+
+> **Note :** Si vous rencontrez des problèmes lors de l'installation, consultez la section [Issues](https://github.com/username/smart-locker/issues) ou ouvrez un ticket.
 
 > 🔐 Projet personnel pour apprendre le Rust en profondeur tout en créant un outil utile au quotidien.

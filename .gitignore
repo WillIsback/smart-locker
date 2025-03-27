@@ -1,0 +1,36 @@
+# Generated files
+/target/
+**/*.rs.bk
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE and editor files
+/.vscode/
+/.idea/
+/*.swp
+*.swo
+*.swn
+*.tmp
+*.log
+
+# Dependency directory
+/.cargo/
+
+# Other
+.DS_Store
+Thumbs.db
+
+# Added by cargo
+
+/target
+
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target
