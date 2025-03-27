@@ -1,47 +1,50 @@
-// src/commands/encrypt.rs
+use aes_gcm::{Aes256Gcm, Key, Nonce}; // AES-GCM
+use aes_gcm::KeyInit; // Import du trait nécessaire pour initialiser le chiffreur
+use aes_gcm::aead::Aead; // Import du trait pour le chiffrement
+use std::fs;
+use directories::UserDirs;
+use flate2::write::GzEncoder;
+use flate2::Compression;
+use std::io::Write;
 
-use std::fs::File;
-use std::io::{self, Write};
-use std::path::PathBuf;
-use aes_gcm::{Aes256Gcm, Key, Nonce}; // Assuming aes-gcm is used for encryption
-use rand::Rng;
-use serde::{Serialize, Deserialize};
+pub fn encrypt(secret: &str, name: &str) {
+    // Obtenir le chemin du dossier sécurisé
+    let user_dirs = UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
+    let locker_dir = user_dirs.home_dir().join(".locker");
+    let key_path = locker_dir.join("locker.key");
 
-const LOCKER_DIR: &str = "~/.locker/";
+    // Lire la clé symétrique
+    let key_data = fs::read(&key_path).expect("Impossible de lire la clé symétrique");
+    let key = Key::<Aes256Gcm>::from_slice(&key_data); // Spécifiez explicitement le type de clé
 
-#[derive(Serialize, Deserialize)]
-struct Secret {
-    name: String,
-    value: String,
-}
+    // Initialiser AES-GCM avec la clé
+    let cipher = Aes256Gcm::new(key);
 
-pub fn encrypt_secret(name: &str, value: &str) -> io::Result<()> {
-    let locker_path = shellexpand::tilde(LOCKER_DIR).to_string();
-    let file_path = format!("{}.slock", locker_path);
-    
-    // Generate a random nonce
-    let nonce: [u8; 12] = rand::thread_rng().gen();
-    
-    // Load the encryption key (this should be securely managed)
-    let key = Key::from_slice(&load_key()?); // Assuming load_key() retrieves the key
+    // Générer un nonce aléatoire (12 octets)
+    let random_bytes = rand::random::<[u8; 12]>(); // Stocker les octets générés dans une variable
+    let nonce = Nonce::from_slice(&random_bytes);  // Passer une référence à la variable
 
-    // Create the cipher
-    let cipher = Aes256Gcm::new(&key);
-    
-    // Encrypt the secret
-    let encrypted_data = cipher.encrypt(Nonce::from_slice(&nonce), value.as_bytes())
-        .expect("Encryption failed");
+    // Compresser le secret
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder
+        .write_all(secret.as_bytes())
+        .expect("Erreur lors de la compression des données");
+    let compressed_data = encoder
+        .finish()
+        .expect("Erreur lors de la finalisation de la compression");
 
-    // Write the encrypted data to the file
-    let mut file = File::create(file_path)?;
-    file.write_all(&nonce)?;
-    file.write_all(&encrypted_data)?;
+    // Chiffrer les données compressées
+    let ciphertext = cipher
+        .encrypt(&nonce, compressed_data.as_ref())
+        .expect("Erreur lors du chiffrement");
 
-    Ok(())
-}
+    // Sauvegarder le secret chiffré dans un fichier `.slock`
+    let output_path = locker_dir.join(format!("{}.slock", name));
+    let mut output_data = Vec::new();
+    output_data.extend_from_slice(nonce);
+    output_data.extend_from_slice(&ciphertext);
 
-// Placeholder for the load_key function
-fn load_key() -> io::Result<Vec<u8>> {
-    // Implement key loading logic here
-    Ok(vec![0; 32]) // Example: return a dummy key
+    fs::write(&output_path, output_data).expect("Erreur lors de l'écriture du fichier chiffré");
+
+    println!("✅ Secret chiffré et sauvegardé dans : {:?}", output_path);
 }
