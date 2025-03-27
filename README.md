@@ -18,7 +18,11 @@ Les stocker en clair est risqué. Les encoder en base64 ne suffit pas. SmartLock
 - ✅ Fichiers suffixés `.slock` ou `.aes`
 - ✅ CLI ergonomique avec `smartlocker encrypt`, `decrypt`, `list`, etc.
 - ✅ Support du piping (ex: `cat secret.txt | smartlocker encrypt -n my_secret`)
-- 🛡️ Option : génération de la clé à partir d'une passphrase hashée (PBKDF2)
+- ✅ Option : génération de la clé à partir d'une passphrase hashée (PBKDF2)
+- ✅ Option : copier le secret déchiffré dans le presse-papier
+- 🔜 Option : plugin Git pre-commit pour empêcher les push de secrets
+- 🔜 Option : coffre avec expiration automatique
+
 
 ## 🗂️ Arborescence cible
 
@@ -56,7 +60,7 @@ EXEMPLE :
 ## 🧱 Étapes futures
 
 - [ ]  Ajout d’un coffre avec expiration automatique
-- [ ]  Option `--clipboard` pour copier en RAM temporaire
+- [V]  Option `--clipboard` pour copier en RAM temporaire
 - [ ]  Plugin Git pre-commit pour empêcher les push de secrets
 
 ## 📈 Pourquoi ce projet ?
@@ -107,7 +111,7 @@ SmartLocker peut être installé sur **Linux** et **Windows**. Voici les différ
 Exécutez le script suivant pour télécharger, compiler et installer SmartLocker :
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/username/smart-locker/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/WillIsback/smart-locker/main/install.sh | bash
 ```
 
 Ce script :
@@ -121,7 +125,7 @@ Ce script :
 Exécutez cette commande dans PowerShell pour télécharger et installer SmartLocker :
 
 ```powershell
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/username/smart-locker/main/install.ps1 -OutFile install.ps1; ./install.ps1
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/WillIsback/smart-locker/main/install.ps1 -OutFile install.ps1; ./install.ps1
 ```
 
 Ce script :
@@ -143,7 +147,7 @@ Ce script :
 
 2. Clonez le dépôt :
    ```bash
-   git clone https://github.com/username/smart-locker.git
+   git clone https://github.com/WillIsback/smart-locker.git
    cd smart-locker
    ```
 
@@ -168,7 +172,7 @@ Ce script :
 
 2. Clonez le dépôt :
    ```powershell
-   git clone https://github.com/username/smart-locker.git
+   git clone https://github.com/WillIsback/smart-locker.git
    cd smart-locker
    ```
 
@@ -189,25 +193,9 @@ Ce script :
 
 ---
 
-### 🦀 Icône Rust pour l'identité
-
-Pour renforcer l'identité visuelle de SmartLocker, vous pouvez utiliser un petit icône Rust dans vos binaires. Voici comment l'ajouter :
-
-1. Installez [`rust-embed`](https://github.com/pyros2097/rust-embed) pour inclure des ressources dans votre binaire.
-2. Ajoutez un fichier SVG ou PNG représentant l'icône Rust dans votre projet.
-3. Modifiez votre code pour inclure l'icône dans les messages d'aide ou d'exécution.
-
-Exemple d'ajout d'un icône dans les messages d'aide :
-
-```rust
-println!("{}", "🦀 SmartLocker - Sécurisez vos secrets avec Rust !".bold().green());
-```
-
----
-
 ### 📦 Packages précompilés (à venir)
 
-Nous prévoyons de fournir des **binaires précompilés** pour les principales plateformes (Linux, Windows, macOS). Vous pourrez les télécharger directement depuis la page [Releases](https://github.com/username/smart-locker/releases).
+Nous prévoyons de fournir des **binaires précompilés** pour les principales plateformes (Linux, Windows, macOS). Vous pourrez les télécharger directement depuis la page [Releases](https://github.com/WillIsback/smart-locker.git/1.0.0).
 
 ---
 
@@ -223,6 +211,6 @@ smart-locker decrypt -n my_secret
 
 ---
 
-> **Note :** Si vous rencontrez des problèmes lors de l'installation, consultez la section [Issues](https://github.com/username/smart-locker/issues) ou ouvrez un ticket.
+> **Note :** Si vous rencontrez des problèmes lors de l'installation, consultez la section [Issues](https://github.com/WillIsback/smart-locker/issues) ou ouvrez un ticket.
 
 > 🔐 Projet personnel pour apprendre le Rust en profondeur tout en créant un outil utile au quotidien.

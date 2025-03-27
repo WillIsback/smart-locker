@@ -11,8 +11,14 @@ use commands::remove::remove_secret;
 use smart_locker::utils::init_locker;
 use smart_locker::utils::derive_key_from_passphrase;
 use colored::*; // Pour les couleurs
+use std::env;
 
 fn main() {
+    // Afficher le logo uniquement pour l'aide générale
+    if std::env::args().any(|arg| arg == "--help" || arg == "-h") {
+        display_logo();
+    }
+    println!("Current working directory: {:?}", env::current_dir().unwrap());
     // Vérifier si le dossier ~/.locker existe
     let user_dirs = UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
     let locker_dir = user_dirs.home_dir().join(".locker");
@@ -136,6 +142,7 @@ fn main() {
     .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("init") {
+        display_logo(); // Afficher le logo uniquement pour la commande init
         if let Some(passphrase) = matches.get_one::<String>("passphrase") {
             let salt = b"smartlocker_salt"; // Vous pouvez personnaliser le sel
             let key = derive_key_from_passphrase(passphrase, salt);
@@ -205,4 +212,10 @@ fn main() {
         remove_secret(name);
         println!("{}", format!("✅ Secret '{}' supprimé avec succès !", name).green());
     }
+}
+
+fn display_logo() {
+
+        println!("{}", "🦀🔐 SmartLocker - Sécurisez vos secrets avec Rust !".bold().green());
+
 }
