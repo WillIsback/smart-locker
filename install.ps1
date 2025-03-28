@@ -9,33 +9,35 @@ Write-Host "${Green}🔐 SmartLocker - Installation automatique pour Windows${Re
 # Vérifier si Rust est installé
 if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
     Write-Host "${Red}Rust n'est pas installé. Veuillez installer Rust avant de continuer.${Reset}"
-    Write-Host "${Yellow}Vous pouvez l'installer avec : https://rustup.rs/${Reset}"
     exit 1
 }
 
-# Cloner le dépôt GitHub
-Write-Host "${Green}📥 Téléchargement du projet SmartLocker...${Reset}"
-if (Test-Path "smart-locker") {
-    Write-Host "${Yellow}Le dossier 'smart-locker' existe déjà. Suppression...${Reset}"
-    Remove-Item -Recurse -Force "smart-locker"
-}
-git clone https://github.com/WillIsback/smart-locker.git
-Set-Location "smart-locker"
+# Définir le dépôt Git et la branche par défaut
+$RepoUrl = "https://github.com/WillIsback/SmartLocker.git"
+$Branch = "main"
 
-# Compiler le projet en mode release
-Write-Host "${Green}⚙️ Compilation du projet en mode release...${Reset}"
+# Vérifier si l'argument "nightly" est passé
+if ($args -contains "nightly") {
+    Write-Host "${Yellow}Mode nightly activé : utilisation du dépôt GitLab et de la branche preprod.${Reset}"
+    $RepoUrl = "git@gitlab.com:WillIsback/SmartLocker.git"
+    $Branch = "preprod"
+}
+
+# Cloner le dépôt
+Write-Host "${Green}Clonage du dépôt : $RepoUrl (branche : $Branch)${Reset}"
+git clone --branch $Branch $RepoUrl smart-locker-temp
+Set-Location smart-locker-temp
+
+# Construire le projet
+Write-Host "${Green}Construction du projet...${Reset}"
 cargo build --release
 
-# Ajouter le binaire au PATH
-Write-Host "${Green}🚀 Ajout du binaire au PATH...${Reset}"
-$Binaire = Join-Path (Get-Location) "target\release\smart-locker.exe"
-$Env:Path += ";$($Binaire | Split-Path -Parent)"
+# Installer le binaire
+Write-Host "${Green}Installation du binaire...${Reset}"
+Copy-Item -Path .\target\release\smart-locker.exe -Destination "C:\Program Files\smart-locker\smart-locker.exe" -Force
 
-# Vérifier l'installation
-if (Get-Command smart-locker -ErrorAction SilentlyContinue) {
-    Write-Host "${Green}✅ Installation réussie ! Vous pouvez maintenant utiliser SmartLocker.${Reset}"
-    Write-Host "${Yellow}Exemple : smart-locker --help${Reset}"
-} else {
-    Write-Host "${Red}❌ Une erreur s'est produite lors de l'installation.${Reset}"
-    exit 1
-}
+# Nettoyer les fichiers temporaires
+Set-Location ..
+Remove-Item -Recurse -Force smart-locker-temp
+
+Write-Host "${Green}✅ Installation terminée avec succès !${Reset}"

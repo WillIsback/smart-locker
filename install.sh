@@ -13,32 +13,35 @@ echo -e "${GREEN}🔐 SmartLocker - Installation automatique pour Linux${NC}"
 # Vérifier si Rust est installé
 if ! command -v cargo &> /dev/null; then
     echo -e "${RED}Rust n'est pas installé. Veuillez installer Rust avant de continuer.${NC}"
-    echo -e "${YELLOW}Vous pouvez l'installer avec : curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh${NC}"
     exit 1
 fi
 
-# Cloner le dépôt GitHub
-echo -e "${GREEN}📥 Téléchargement du projet SmartLocker...${NC}"
-if [ -d "smart-locker" ]; then
-    echo -e "${YELLOW}Le dossier 'smart-locker' existe déjà. Suppression...${NC}"
-    rm -rf smart-locker
-fi
-git clone https://github.com/WillIsback/smart-locker.git
-cd smart-locker
+# Définir le dépôt Git et la branche par défaut
+REPO_URL="https://github.com/WillIsback/SmartLocker.git"
+BRANCH="main"
 
-# Compiler le projet en mode release
-echo -e "${GREEN}⚙️ Compilation du projet en mode release...${NC}"
+# Vérifier si l'argument "nightly" est passé
+if [[ "$1" == "nightly" ]]; then
+    echo -e "${YELLOW}Mode nightly activé : utilisation du dépôt GitLab et de la branche preprod.${NC}"
+    REPO_URL="git@gitlab.com:WillIsback/SmartLocker.git"
+    BRANCH="preprod"
+fi
+
+# Cloner le dépôt
+echo -e "${GREEN}Clonage du dépôt : $REPO_URL (branche : $BRANCH)${NC}"
+git clone --branch "$BRANCH" "$REPO_URL" smart-locker-temp
+cd smart-locker-temp
+
+# Construire le projet
+echo -e "${GREEN}Construction du projet...${NC}"
 cargo build --release
 
-# Copier le binaire dans /usr/local/bin
-echo -e "${GREEN}🚀 Installation du binaire dans /usr/local/bin...${NC}"
+# Installer le binaire
+echo -e "${GREEN}Installation du binaire...${NC}"
 sudo cp target/release/smart-locker /usr/local/bin/
 
-# Vérifier l'installation
-if command -v smart-locker &> /dev/null; then
-    echo -e "${GREEN}✅ Installation réussie ! Vous pouvez maintenant utiliser SmartLocker.${NC}"
-    echo -e "${YELLOW}Exemple : smart-locker --help${NC}"
-else
-    echo -e "${RED}❌ Une erreur s'est produite lors de l'installation.${NC}"
-    exit 1
-fi
+# Nettoyer les fichiers temporaires
+cd ..
+rm -rf smart-locker-temp
+
+echo -e "${GREEN}✅ Installation terminée avec succès !${NC}"
