@@ -1,47 +1,33 @@
-// src/commands/encrypt.rs
+use aes_gcm::{Aes256Gcm, Key, Nonce};
+use aes_gcm::KeyInit;
+use aes_gcm::aead::Aead;
+use std::fs;
+use flate2::write::GzEncoder;
+use flate2::Compression;
+use std::io::Write;
+use crate::utils::toolbox::get_locker_dir;
 
-use std::fs::File;
-use std::io::{self, Write};
-use std::path::PathBuf;
-use aes_gcm::{Aes256Gcm, Key, Nonce}; // Assuming aes-gcm is used for encryption
-use rand::Rng;
-use serde::{Serialize, Deserialize};
+pub fn encrypt(secret: &str, name: &str) {
+    let locker_dir = get_locker_dir();
+    let key_path = locker_dir.join("locker.key");
 
-const LOCKER_DIR: &str = "~/.locker/";
+    let key_data = fs::read(&key_path).expect("Unable to read symmetric key");
+    let key = Key::<Aes256Gcm>::from_slice(&key_data);
+    let cipher = Aes256Gcm::new(key);
+    let random_bytes = rand::random::<[u8; 12]>();
+    let nonce = Nonce::from_slice(&random_bytes);
 
-#[derive(Serialize, Deserialize)]
-struct Secret {
-    name: String,
-    value: String,
-}
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(secret.as_bytes()).expect("Error during data compression");
+    let compressed_data = encoder.finish().expect("Error when finalizing compression");
 
-pub fn encrypt_secret(name: &str, value: &str) -> io::Result<()> {
-    let locker_path = shellexpand::tilde(LOCKER_DIR).to_string();
-    let file_path = format!("{}.slock", locker_path);
-    
-    // Generate a random nonce
-    let nonce: [u8; 12] = rand::thread_rng().gen();
-    
-    // Load the encryption key (this should be securely managed)
-    let key = Key::from_slice(&load_key()?); // Assuming load_key() retrieves the key
+    let ciphertext = cipher.encrypt(&nonce, compressed_data.as_ref()).expect("Error during encryption");
 
-    // Create the cipher
-    let cipher = Aes256Gcm::new(&key);
-    
-    // Encrypt the secret
-    let encrypted_data = cipher.encrypt(Nonce::from_slice(&nonce), value.as_bytes())
-        .expect("Encryption failed");
+    let output_path = locker_dir.join(format!("{}.slock", name));
+    let mut output_data = Vec::new();
+    output_data.extend_from_slice(nonce);
+    output_data.extend_from_slice(&ciphertext);
 
-    // Write the encrypted data to the file
-    let mut file = File::create(file_path)?;
-    file.write_all(&nonce)?;
-    file.write_all(&encrypted_data)?;
-
-    Ok(())
-}
-
-// Placeholder for the load_key function
-fn load_key() -> io::Result<Vec<u8>> {
-    // Implement key loading logic here
-    Ok(vec![0; 32]) // Example: return a dummy key
+    fs::write(&output_path, output_data).expect("Error when writing encrypted file");
+    println!("✅ Secret encrypted and saved in: {:?}", output_path);
 }

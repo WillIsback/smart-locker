@@ -1,25 +1,21 @@
-// This file implements the `list` command. It exports a function `list_secrets` that lists all stored secrets in the `~/.locker` directory.
-
 use std::fs;
-use std::path::PathBuf;
+use crate::utils::toolbox::get_locker_dir;
 
-pub fn list_secrets() -> Result<(), Box<dyn std::error::Error>> {
-    let locker_dir = dirs::home_dir().unwrap().join(".locker");
-    
-    if locker_dir.exists() && locker_dir.is_dir() {
-        let entries = fs::read_dir(locker_dir)?;
-
-        println!("Secrets stored in ~/.locker:");
-        for entry in entries {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_file() {
-                println!("{}", path.display());
+/// Returns a list of available secrets in the secure folder.
+pub fn list_secrets() -> Vec<String> {
+    let locker_dir = get_locker_dir();
+    let mut secrets = Vec::new();
+    if let Ok(entries) = fs::read_dir(&locker_dir) {
+        for entry in entries.flatten() {
+            if let Ok(file_type) = entry.file_type() {
+                if file_type.is_file() {
+                    let filename = entry.file_name().to_string_lossy().to_string();
+                    if filename.ends_with(".slock") {
+                        secrets.push(filename);
+                    }
+                }
             }
         }
-    } else {
-        println!("No secrets found. The ~/.locker directory does not exist.");
     }
-
-    Ok(())
+    secrets
 }
