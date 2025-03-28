@@ -7,7 +7,7 @@ use std::env;
 // Cette fonction initialise le coffre-fort en créant un dossier sécurisé et en générant une clé symétrique.
 pub fn init_locker() {
     // Vérifier si une variable d'environnement définit le chemin du répertoire
-    let locker_dir = if let Ok(custom_home) = env::var("SMART_LOCKER_HOME") {
+    let locker_dir: PathBuf = if let Ok(custom_home) = env::var("SMART_LOCKER_HOME") {
         PathBuf::from(custom_home)
     } else {
         let user_dirs = directories::UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
