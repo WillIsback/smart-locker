@@ -18,3 +18,7 @@ flate2 = "1.0"
 [[test]]
 name = "test"
 path = "src/tests/test.rs"
+
+[features]
+default = []
+disable_clipboard_tests = []
