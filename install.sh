@@ -8,7 +8,7 @@ RED='\033[0;31m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # Pas de couleur
 
-echo -e "${GREEN}🦀🔐 SmartLocker - Installation automatique pour Linux${NC}"
+echo -e "${GREEN}🔐 SmartLocker - Installation automatique pour Linux${NC}"
 
 # Vérifier si Rust est installé
 if ! command -v cargo &> /dev/null; then
