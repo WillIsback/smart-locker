@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-/// Retourne une liste des secrets disponibles dans le dossier sécurisé.
+/// Returns a list of available secrets in the secure folder.
 pub fn list_secrets(locker_dir: &PathBuf) -> Vec<String> {
     let mut secrets = Vec::new();
     if let Ok(entries) = fs::read_dir(locker_dir) {

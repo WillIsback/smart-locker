@@ -9,12 +9,12 @@ use std::io::Write;
 
 pub fn encrypt(secret: &str, name: &str) {
     // Obtenir le chemin du dossier sécurisé
-    let user_dirs = UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
+    let user_dirs = UserDirs::new().expect("Unable to access user directory");
     let locker_dir = user_dirs.home_dir().join(".locker");
     let key_path = locker_dir.join("locker.key");
 
     // Lire la clé symétrique
-    let key_data = fs::read(&key_path).expect("Impossible de lire la clé symétrique");
+    let key_data = fs::read(&key_path).expect("Unable to read symmetric key");
     let key = Key::<Aes256Gcm>::from_slice(&key_data); // Spécifiez explicitement le type de clé
 
     // Initialiser AES-GCM avec la clé
@@ -28,15 +28,15 @@ pub fn encrypt(secret: &str, name: &str) {
     let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
     encoder
         .write_all(secret.as_bytes())
-        .expect("Erreur lors de la compression des données");
+        .expect("Error during data compression");
     let compressed_data = encoder
         .finish()
-        .expect("Erreur lors de la finalisation de la compression");
+        .expect("Error when finalizing compression");
 
     // Chiffrer les données compressées
     let ciphertext = cipher
         .encrypt(&nonce, compressed_data.as_ref())
-        .expect("Erreur lors du chiffrement");
+        .expect("Error during encryption");
 
     // Sauvegarder le secret chiffré dans un fichier `.slock`
     let output_path = locker_dir.join(format!("{}.slock", name));
@@ -44,7 +44,7 @@ pub fn encrypt(secret: &str, name: &str) {
     output_data.extend_from_slice(nonce);
     output_data.extend_from_slice(&ciphertext);
 
-    fs::write(&output_path, output_data).expect("Erreur lors de l'écriture du fichier chiffré");
+    fs::write(&output_path, output_data).expect("Error when writing encrypted file");
 
-    println!("✅ Secret chiffré et sauvegardé dans : {:?}", output_path);
+    println!("✅ Secret encrypted and saved in: {:?}", output_path);
 }

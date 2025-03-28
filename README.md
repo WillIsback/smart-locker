@@ -96,7 +96,6 @@ Because managing secrets in a fullstack project means:
    `.slock` encrypted file         →        Decrypted secret
 ```
 
-Voici la **mise à jour complète de la section "Installation"** de ton `README.md`, reflétant les **bonnes pratiques modernes** (binaire `.zip` précompilé, suppression du script `.ps1`, et recommandations propres) :
 
 ---
 

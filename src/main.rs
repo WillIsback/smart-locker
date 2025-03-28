@@ -1,5 +1,5 @@
 mod commands;
-// Importation des modules nécessaires
+// Import necessary modules
 use std::fs;
 use std::io::Read;
 use directories::UserDirs;
@@ -10,51 +10,51 @@ use commands::list::list_secrets;
 use commands::remove::remove_secret;
 use smart_locker::utils::init_locker;
 use smart_locker::utils::derive_key_from_passphrase;
-use colored::*; // Pour les couleurs
+use colored::*; // For colored output
 use std::env;
 
 fn main() {
-    // Afficher le logo uniquement pour l'aide générale
+    // Display the logo only for general help
     if std::env::args().any(|arg| arg == "--help" || arg == "-h") {
         display_logo();
     }
     println!("Current working directory: {:?}", env::current_dir().unwrap());
-    // Vérifier si le dossier ~/.locker existe
-    let user_dirs = UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
+    // Check if the ~/.locker folder exists
+    let user_dirs = UserDirs::new().expect("Unable to access the user directory");
     let locker_dir = user_dirs.home_dir().join(".locker");
 
-    // Gestion des commandes CLI
+    // CLI command management
     let matches = Command::new("SmartLocker")
     .version("1.0")
     .author("William")
-    .about("🔐 Un outil CLI pour chiffrer et gérer des secrets sensibles")
+    .about("🔐 A CLI tool to encrypt and manage sensitive secrets")
     .long_about(
-        "SmartLocker est un outil de gestion de secrets qui vous permet de chiffrer, \
-        déchiffrer, lister et supprimer des secrets sensibles en toute sécurité.\n\n\
-        Commandes disponibles :\n\
-        - init : Initialise le coffre-fort et génère une clé symétrique.\n\
-            --passphrase : Passphrase pour générer la clé symétrique.\n\
-        - encrypt : Chiffre un secret et le sauvegarde dans le coffre-fort.\n\
-            --name : Nom du secret.\n\
-            --value : Valeur du secret à chiffrer.\n\
-            Si --value n'est pas fourni, la valeur sera lue depuis stdin.\n\n\
-        - decrypt : Déchiffre un secret.\n\
-            --name : Nom du secret à déchiffrer.\n\
-            --clipboard : Copie le secret déchiffré dans le presse-papier.\n\n\
-        - list : Liste tous les secrets disponibles.\n\
-        - remove : Supprime un secret.\n\n\
-        Utilisez --help ou -h après une commande pour plus de détails.",
+        "SmartLocker is a secret management tool that allows you to securely encrypt, \
+        decrypt, list, and delete sensitive secrets.\n\n\
+        Available commands:\n\
+        - init: Initializes the vault and generates a symmetric key.\n\
+            --passphrase: Passphrase to generate the symmetric key.\n\
+        - encrypt: Encrypts a secret and saves it in the vault.\n\
+            --name: Name of the secret.\n\
+            --value: Value of the secret to encrypt.\n\
+            If --value is not provided, the value will be read from stdin.\n\n\
+        - decrypt: Decrypts a secret.\n\
+            --name: Name of the secret to decrypt.\n\
+            --clipboard: Copies the decrypted secret to the clipboard.\n\n\
+        - list: Lists all available secrets.\n\
+        - remove: Deletes a secret.\n\n\
+        Use --help or -h after a command for more details.",
     )
     .subcommand(
         Command::new("init")
-            .about("Initialise le coffre-fort et génère une clé symétrique")
+            .about("Initializes the vault and generates a symmetric key")
             .long_about(
-                "Initialise le coffre-fort en générant une clé symétrique.\n\n\
-                EXEMPLES :\n\
-                - Générer une clé aléatoire :\n\
+                "Initializes the vault by generating a symmetric key.\n\n\
+                EXAMPLES:\n\
+                - Generate a random key:\n\
                   smart-locker init\n\
-                - Générer une clé à partir d'une passphrase :\n\
-                  smart-locker init --passphrase \"ma passphrase\"",
+                - Generate a key from a passphrase:\n\
+                  smart-locker init --passphrase \"my passphrase\"",
             )
             .arg(
                 Arg::new("passphrase")
@@ -62,42 +62,42 @@ fn main() {
                     .long("passphrase")
                     .num_args(1)
                     .required(false)
-                    .help("Passphrase pour générer la clé symétrique"),
+                    .help("Passphrase to generate the symmetric key"),
             ),
     )
     .subcommand(
         Command::new("encrypt")
-            .about("Chiffre un secret")
+            .about("Encrypts a secret")
             .long_about(
-                "Chiffre un secret et le sauvegarde dans le coffre-fort.\n\n\
-                EXEMPLES :\n\
-                - Chiffrer un secret avec une valeur :\n\
-                  smart-locker encrypt -n my_secret -v \"ma valeur\"\n\
-                - Chiffrer un secret en lisant la valeur depuis stdin :\n\
-                  echo \"ma valeur\" | smart-locker encrypt -n my_secret",
+                "Encrypts a secret and saves it in the vault.\n\n\
+                EXAMPLES:\n\
+                - Encrypt a secret with a value:\n\
+                  smart-locker encrypt -n my_secret -v \"my value\"\n\
+                - Encrypt a secret by reading the value from stdin:\n\
+                  echo \"my value\" | smart-locker encrypt -n my_secret",
             )
             .arg(Arg::new("name")
                 .short('n')
                 .long("name")
                 .num_args(1)
                 .required(true)
-                .help("Nom du secret"))
+                .help("Name of the secret"))
             .arg(Arg::new("value")
                 .short('v')
                 .long("value")
                 .num_args(1)
                 .required(false)
-                .help("Valeur du secret à chiffrer")),
+                .help("Value of the secret to encrypt")),
     )
     .subcommand(
         Command::new("decrypt")
-            .about("Déchiffre un secret")
+            .about("Decrypts a secret")
             .long_about(
-                "Déchiffre un secret et affiche sa valeur ou la copie dans le presse-papier.\n\n\
-                EXEMPLES :\n\
-                - Déchiffrer un secret et l'afficher :\n\
+                "Decrypts a secret and displays its value or copies it to the clipboard.\n\n\
+                EXAMPLES:\n\
+                - Decrypt a secret and display it:\n\
                   smart-locker decrypt -n my_secret\n\
-                - Déchiffrer un secret et le copier dans le presse-papier :\n\
+                - Decrypt a secret and copy it to the clipboard:\n\
                   smart-locker decrypt -n my_secret --clipboard",
             )
             .arg(Arg::new("name")
@@ -105,31 +105,31 @@ fn main() {
                 .long("name")
                 .num_args(1)
                 .required(true)
-                .help("Nom du secret à déchiffrer"))
+                .help("Name of the secret to decrypt"))
             .arg(Arg::new("clipboard")
                 .short('c')
                 .long("clipboard")
                 .action(clap::ArgAction::SetTrue)
                 .required(false)
-                .help("Copie le secret déchiffré dans le presse-papier")),
+                .help("Copies the decrypted secret to the clipboard")),
     )
     .subcommand(
         Command::new("list")
-            .about("Liste tous les secrets disponibles")
+            .about("Lists all available secrets")
             .long_about(
-                "Affiche la liste des secrets disponibles dans le coffre-fort.\n\n\
-                EXEMPLES :\n\
-                - Lister tous les secrets :\n\
+                "Displays the list of available secrets in the vault.\n\n\
+                EXAMPLES:\n\
+                - List all secrets:\n\
                   smart-locker list",
             ),
     )
     .subcommand(
         Command::new("remove")
-            .about("Supprime un secret")
+            .about("Deletes a secret")
             .long_about(
-                "Supprime un secret du coffre-fort.\n\n\
-                EXEMPLES :\n\
-                - Supprimer un secret :\n\
+                "Deletes a secret from the vault.\n\n\
+                EXAMPLES:\n\
+                - Delete a secret:\n\
                   smart-locker remove -n my_secret",
             )
             .arg(Arg::new("name")
@@ -137,72 +137,72 @@ fn main() {
                 .long("name")
                 .num_args(1)
                 .required(true)
-                .help("Nom du secret à supprimer")),
+                .help("Name of the secret to delete")),
     )
     .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("init") {
-        display_logo(); // Afficher le logo uniquement pour la commande init
+        display_logo(); // Display the logo only for the init command
         if let Some(passphrase) = matches.get_one::<String>("passphrase") {
-            let salt = b"smartlocker_salt"; // Vous pouvez personnaliser le sel
+            let salt = b"smartlocker_salt"; // You can customize the salt
             let key = derive_key_from_passphrase(passphrase, salt);
 
             let key_path = locker_dir.join("locker.key");
-            fs::write(&key_path, key).expect("Erreur lors de l'écriture de la clé");
-            println!("{}", format!("✅ Clé générée à partir de la passphrase et sauvegardée : {:?}", key_path).green());
+            fs::write(&key_path, key).expect("Error writing the key");
+            println!("{}", format!("✅ Key generated from the passphrase and saved: {:?}", key_path).green());
         } else {
-            init_locker(); // Appeler la fonction existante pour générer une clé aléatoire
-            println!("{}", "✅ Coffre-fort initialisé avec succès !".green());
+            init_locker(); // Call the existing function to generate a random key
+            println!("{}", "✅ Vault initialized successfully!".green());
         }
     } else if let Some(matches) = matches.subcommand_matches("encrypt") {
         let name = matches.get_one::<String>("name").unwrap();
         let value = if let Some(value) = matches.get_one::<String>("value") {
             value.clone()
         } else {
-            // Lire depuis stdin si --value n'est pas fourni
+            // Read from stdin if --value is not provided
             let mut input = String::new();
             std::io::stdin()
                 .read_to_string(&mut input)
-                .expect("Erreur lors de la lecture de stdin");
+                .expect("Error reading from stdin");
             input.trim().to_string()
         };
         encrypt(&value, name);
-        println!("{}", format!("✅ Secret '{}' chiffré avec succès !", name).green());
+        println!("{}", format!("✅ Secret '{}' encrypted successfully!", name).green());
     } else if let Some(matches) = matches.subcommand_matches("decrypt") {
         let name = matches.get_one::<String>("name").unwrap();
         let decrypted_value = decrypt(name);
         if matches.get_flag("clipboard") {
             if cfg!(target_os = "linux") && std::env::var("WSL_DISTRO_NAME").is_ok() {
-                // Utiliser clip.exe pour WSL
+                // Use clip.exe for WSL
                 use std::process::{Command, Stdio};
                 let mut child = Command::new("clip.exe")
                     .stdin(Stdio::piped())
                     .spawn()
-                    .expect("Impossible d'exécuter clip.exe");
+                    .expect("Unable to execute clip.exe");
                 {
-                    let stdin = child.stdin.as_mut().expect("Impossible d'accéder à stdin");
+                    let stdin = child.stdin.as_mut().expect("Unable to access stdin");
                     use std::io::Write;
                     stdin
                         .write_all(decrypted_value.as_bytes())
-                        .expect("Erreur lors de l'écriture dans clip.exe");
+                        .expect("Error writing to clip.exe");
                 }
-                child.wait().expect("Erreur lors de l'exécution de clip.exe");
-                println!("{}", "✅ Secret copié dans le presse-papier Windows !".green());
+                child.wait().expect("Error executing clip.exe");
+                println!("{}", "✅ Secret copied to Windows clipboard!".green());
             } else {
-                // Copier dans le presse-papier Linux
+                // Copy to Linux clipboard
                 use copypasta::{ClipboardContext, ClipboardProvider};
-                let mut ctx = ClipboardContext::new().expect("Impossible d'accéder au presse-papier");
+                let mut ctx = ClipboardContext::new().expect("Unable to access the clipboard");
                 ctx.set_contents(decrypted_value.clone())
-                    .expect("Erreur lors de la copie dans le presse-papier");
-                println!("{}", "✅ Secret copié dans le presse-papier !".green());
+                    .expect("Error copying to the clipboard");
+                println!("{}", "✅ Secret copied to the clipboard!".green());
             }
         }
-    }else if matches.subcommand_matches("list").is_some() {
+    } else if matches.subcommand_matches("list").is_some() {
         let secrets = list_secrets(&locker_dir);
         if secrets.is_empty() {
-            println!("{}", "⚠️ Aucun secret trouvé.".yellow());
+            println!("{}", "⚠️ No secrets found.".yellow());
         } else {
-            println!("{}", "🔒 Secrets disponibles :".blue());
+            println!("{}", "🔒 Available secrets:".blue());
             for secret in secrets {
                 println!("{}", secret);
             }
@@ -210,12 +210,10 @@ fn main() {
     } else if let Some(matches) = matches.subcommand_matches("remove") {
         let name = matches.get_one::<String>("name").unwrap();
         remove_secret(name);
-        println!("{}", format!("✅ Secret '{}' supprimé avec succès !", name).green());
+        println!("{}", format!("✅ Secret '{}' deleted successfully!", name).green());
     }
 }
 
 fn display_logo() {
-
-        println!("{}", "🦀🔐 SmartLocker - Sécurisez vos secrets avec Rust !".bold().green());
-
+    println!("{}", "🦀🔐 SmartLocker - Secure your secrets with Rust!".bold().green());
 }
