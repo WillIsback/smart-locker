@@ -1,7 +1,9 @@
 [package]
 name = "smart-locker"
 version = "0.1.0"
-edition = "2024"
+authors = ["William"]
+edition = "2021"
+license = "MIT"
 
 [dependencies]
 aes-gcm = "0.10"       # Chiffrement AES-GCM
