@@ -27,7 +27,7 @@ Thumbs.db
 # Added by cargo
 .dockerignore
 /target
-
+target/
 # Ignorer le dossier CI local
 ci/
 
