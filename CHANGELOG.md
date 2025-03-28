@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.1.0] - 2025-03-28
 
 ### 🚀 Features
 
@@ -21,6 +21,9 @@ All notable changes to this project will be documented in this file.
 - *(test)* Remove clipboard test from CI Docker
 - *(ci)* Fix CI pipeline and release tag + add changelog to GitLab
 - *(devops)* Add release repo to .gitignore
+- *(ci)* Fix commit format for changelog git-cliff
+- *(ci)* Merge branch 'reformat-commits' into dev
+- Ignore release-* directories in .gitignore
 
 ### ⚙️ Miscellaneous Tasks
 
