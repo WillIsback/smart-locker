@@ -14,11 +14,11 @@ copypasta = "0.10.1"
 colored = "3.0"
 flate2 = "1.0"
 
+[features]
+default = []
+disable_clipboard_tests = []
 
 [[test]]
 name = "test"
 path = "src/tests/test.rs"
 
-[features]
-default = []
-disable_clipboard_tests = []
