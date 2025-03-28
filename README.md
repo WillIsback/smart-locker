@@ -96,47 +96,44 @@ Because managing secrets in a fullstack project means:
    `.slock` encrypted file         →        Decrypted secret
 ```
 
+Voici la **mise à jour complète de la section "Installation"** de ton `README.md`, reflétant les **bonnes pratiques modernes** (binaire `.zip` précompilé, suppression du script `.ps1`, et recommandations propres) :
+
 ---
 
 ## 🛠️ Installation
 
-SmartLocker can be installed on **Linux** and **Windows**. Below are several installation methods tailored to your setup.
+SmartLocker is available for **Linux** and **Windows**. You can either build it from source (for Rust users) or download a ready-to-use binary archive.
 
 ---
 
-### 📦 Automated Installation
+### ✅ Recommended: Precompiled Binary
 
-#### **Linux (via Bash script)**
+#### **Windows**
 
-Run the following script to download, build, and install SmartLocker:
+1. Download the latest release from the [Releases page](https://github.com/WillIsback/smart-locker/releases).
+2. Extract the `smartlocker_windows.zip` archive.
+3. (Optional) Add the folder to your `PATH` environment variable for easier use.
+4. Run `smart-locker.exe` from any terminal (PowerShell, cmd, or Windows Terminal).
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/WillIsback/smart-locker/main/install.sh | bash
-```
+#### **Linux**
 
-This script:
-1. Checks if **Rust** is installed.
-2. Clones the GitHub repository.
-3. Builds the project in `release` mode.
-4. Installs the binary into `/usr/local/bin`.
-
-#### **Windows (via PowerShell)**
-
-Run this command in PowerShell to download and install SmartLocker:
-
-```powershell
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/WillIsback/smart-locker/main/install.ps1 -OutFile install.ps1; ./install.ps1
-```
-
-This script:
-1. Verifies that **Rust** is installed.
-2. Clones the GitHub repository.
-3. Builds the project in `release` mode.
-4. Copies the binary to a folder included in your system `PATH`.
+1. Download the latest release from the [Releases page](https://github.com/WillIsback/smart-locker/releases).
+2. Extract the `smartlocker_linux.tar.gz` archive:
+   ```bash
+   tar -xzf smartlocker_linux.tar.gz
+   ```
+3. Move the binary into your path:
+   ```bash
+   sudo mv dist/smart-locker /usr/local/bin/
+   ```
+4. Run:
+   ```bash
+   smart-locker --version
+   ```
 
 ---
 
-### 🛠️ Manual Installation
+### ⚙️ Build from Source (For Developers)
 
 #### **Linux**
 
@@ -156,12 +153,12 @@ This script:
    cargo build --release
    ```
 
-4. Install the binary into `/usr/local/bin`:
+4. Install the binary:
    ```bash
    sudo cp target/release/smart-locker /usr/local/bin/
    ```
 
-5. Verify the installation:
+5. Verify:
    ```bash
    smart-locker --version
    ```
@@ -176,32 +173,24 @@ This script:
    cd smart-locker
    ```
 
-3. Build the project in release mode:
+3. Build in release mode:
    ```powershell
    cargo build --release
    ```
 
-4. Add the binary to your `PATH`:
+4. (Optional) Add to PATH:
    ```powershell
    $Env:Path += ";$PWD\target\release"
    ```
 
-5. Verify the installation:
+5. Test:
    ```powershell
-   smart-locker --version
+   .\target\release\smart-locker.exe --version
    ```
 
 ---
 
-### 📦 Precompiled Packages (coming soon)
-
-We plan to provide **precompiled binaries** for major platforms (Linux, Windows, macOS). You’ll be able to download them directly from the [Releases page](https://github.com/WillIsback/smart-locker.git/1.0.0).
-
----
-
-### 🧪 Test Your Installation
-
-Once installed, test SmartLocker with the following commands:
+### 🧪 Quick Test After Install
 
 ```bash
 smart-locker init
@@ -211,8 +200,8 @@ smart-locker decrypt -n my_secret
 
 ---
 
-> **Note:** If you encounter any issues during installation, please check the [Issues section](https://github.com/WillIsback/smart-locker/issues) or open a new ticket.
+> 📝 **Note:** If you encounter any issues during installation, please check the [Issues section](https://github.com/WillIsback/smart-locker/issues) or open a new ticket.
 
-> 🔐 A personal project to dive deep into Rust while building a useful everyday tool.
+> 🦀🔐 *SmartLocker is a personal project to explore Rust deeply while building a useful security tool for everyday DevOps workflows.*
 ```
 
