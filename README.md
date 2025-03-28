@@ -1,52 +1,51 @@
-# 🔐 SmartLocker
+# 🦀🔐 SmartLocker
 
-Un outil CLI ultra-léger écrit en **Rust** pour **chiffrer, stocker et gérer des secrets sensibles localement**, de manière sécurisée et durable.
+A ultra-lightweight CLI tool written in **Rust** to **encrypt, store, and manage sensitive secrets locally** in a secure and durable way.
 
-## 🚀 Objectif
+## 🚀 Purpose
 
-SmartLocker répond à un besoin réel :
+SmartLocker solves a real-world problem:
 
-> Dans un projet fullstack avec CI/CD, les **tokens, clés privées, passphrases et API keys** deviennent critiques.
+> In a fullstack project with CI/CD pipelines, **tokens, private keys, passphrases, and API keys** become critical.
 
-Les stocker en clair est risqué. Les encoder en base64 ne suffit pas. SmartLocker propose une solution fiable, simple et efficace.
+Storing them in plain text is dangerous. Base64 encoding is not enough. SmartLocker offers a reliable, simple, and effective solution.
 
-## 🎯 Fonctionnalités prévues
+## 🎯 Key Features
 
-- ✅ Chiffrement symétrique des secrets (via AES-GCM ou autre)
-- ✅ Déchiffrement rapide avec passphrase ou clé principale
-- ✅ Dossier sécurisé `~/.locker`
-- ✅ Fichiers suffixés `.slock` ou `.aes`
-- ✅ CLI ergonomique avec `smartlocker encrypt`, `decrypt`, `list`, etc.
-- ✅ Support du piping (ex: `cat secret.txt | smartlocker encrypt -n my_secret`)
-- ✅ Option : génération de la clé à partir d'une passphrase hashée (PBKDF2)
-- ✅ Option : copier le secret déchiffré dans le presse-papier
-- 🔜 Option : plugin Git pre-commit pour empêcher les push de secrets
-- 🔜 Option : coffre avec expiration automatique
+- ✅ Symmetric encryption of secrets (via AES-GCM or similar)
+- ✅ Quick decryption using a passphrase or master key
+- ✅ Secure folder `~/.locker`
+- ✅ Encrypted files with `.slock` or `.aes` extension
+- ✅ User-friendly CLI: `smartlocker encrypt`, `decrypt`, `list`, etc.
+- ✅ Pipe support (e.g. `cat secret.txt | smartlocker encrypt -n my_secret`)
+- ✅ Option: generate key from hashed passphrase (PBKDF2)
+- ✅ Option: copy decrypted secret to clipboard
+- 🔜 Option: Git pre-commit hook to prevent secret leaks
+- 🔜 Option: vault with automatic expiration
 
-
-## 🗂️ Arborescence cible
+## 🗂️ Target Directory Structure
 
 ```
 ~/.locker/
-├── locker.key         # clé symétrique locale (ou générée via passphrase)
+├── locker.key         # local symmetric key (or derived from a passphrase)
 ├── openai_token.slock
 ├── ssh_key_prod.slock
 └── mydb_pass.slock
 ```
 
-## 🛠️ Architecture CLI
+## 🛠️ CLI Architecture
 
 ```
-smartlocker <commande> [options]
+smartlocker <command> [options]
 
-COMMANDES PRINCIPALES :
-  encrypt      Chiffrer un secret et le stocker
-  decrypt      Déchiffrer un fichier .slock
-  list         Lister les secrets chiffrés
-  remove       Supprimer un secret
-  init         Générer la clé principale (locker.key)
+MAIN COMMANDS:
+  encrypt      Encrypt a secret and store it
+  decrypt      Decrypt a `.slock` file
+  list         List encrypted secrets
+  remove       Delete a secret
+  init         Generate the master key (locker.key)
 
-EXEMPLE :
+EXAMPLE:
   smartlocker encrypt -n openai_token -v sk-abc123...
   smartlocker decrypt -n openai_token
 ```
@@ -55,32 +54,32 @@ EXEMPLE :
 
 - 🦀 **Rust** (>= 1.74)
 - 📦 `aes-gcm`, `rand`, `clap`, `serde`, `directories`
-- 🔐 Chiffrement sécurisé basé sur AES 256 GCM
+- 🔐 Secure encryption based on AES-256 GCM
 
-## 🧱 Étapes futures
+## 🧱 Future Steps
 
-- [ ]  Ajout d’un coffre avec expiration automatique
-- [V]  Option `--clipboard` pour copier en RAM temporaire
-- [ ]  Plugin Git pre-commit pour empêcher les push de secrets
+- [ ] Add vault with auto-expiration
+- [V] `--clipboard` option to temporarily copy secrets into RAM
+- [ ] Git pre-commit plugin to block secrets from being committed
 
-## 📈 Pourquoi ce projet ?
+## 📈 Why This Project?
 
-Parce que gérer les secrets dans un projet fullstack, c’est :
+Because managing secrets in a fullstack project means:
 
-- comprendre les failles
-- construire des outils fiables et portables
-- apprendre à sécuriser ses workflows DevOps
+- Understanding security pitfalls
+- Building reliable and portable tools
+- Learning how to secure DevOps workflows
 
 ---
 
-## 🧠 Schéma de fonctionnement
+## 🧠 System Diagram
 
 ```
                 +---------------------------+
                 |     smartlocker init      |
                 +-------------+-------------+
                               |
-                         Génère clé 🔑
+                         Generates key 🔑
                               |
                +--------------v-------------+
                |     ~/.locker/locker.key   |
@@ -92,125 +91,128 @@ Parce que gérer les secrets dans un projet fullstack, c’est :
 | smartlocker encrypt |                  | smartlocker decrypt |
 +---------+--------+                    +----------+---------+
           |                                        |
-     Entrée CLI ou STDIN                      Lecture fichier
+     CLI input or STDIN                     Read encrypted file
           |                                        |
-   Fichier chiffré `.slock`           →    Secret déchiffré
+   `.slock` encrypted file         →        Decrypted secret
 ```
 
 ---
+
 ## 🛠️ Installation
 
-SmartLocker peut être installé sur **Linux** et **Windows**. Voici les différentes méthodes d'installation, adaptées à vos besoins.
+SmartLocker can be installed on **Linux** and **Windows**. Below are several installation methods tailored to your setup.
 
 ---
 
-### 📦 Installation automatisée
+### 📦 Automated Installation
 
-#### **Linux (via script Bash)**
+#### **Linux (via Bash script)**
 
-Exécutez le script suivant pour télécharger, compiler et installer SmartLocker :
+Run the following script to download, build, and install SmartLocker:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/WillIsback/smart-locker/main/install.sh | bash
 ```
 
-Ce script :
-1. Vérifie que **Rust** est installé.
-2. Clone le dépôt GitHub.
-3. Compile le projet en mode `release`.
-4. Installe le binaire dans `/usr/local/bin`.
+This script:
+1. Checks if **Rust** is installed.
+2. Clones the GitHub repository.
+3. Builds the project in `release` mode.
+4. Installs the binary into `/usr/local/bin`.
 
 #### **Windows (via PowerShell)**
 
-Exécutez cette commande dans PowerShell pour télécharger et installer SmartLocker :
+Run this command in PowerShell to download and install SmartLocker:
 
 ```powershell
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/WillIsback/smart-locker/main/install.ps1 -OutFile install.ps1; ./install.ps1
 ```
 
-Ce script :
-1. Vérifie que **Rust** est installé.
-2. Clone le dépôt GitHub.
-3. Compile le projet en mode `release`.
-4. Copie le binaire dans un dossier accessible via le `PATH`.
+This script:
+1. Verifies that **Rust** is installed.
+2. Clones the GitHub repository.
+3. Builds the project in `release` mode.
+4. Copies the binary to a folder included in your system `PATH`.
 
 ---
 
-### 🛠️ Installation manuelle
+### 🛠️ Manual Installation
 
 #### **Linux**
 
-1. Assurez-vous que **Rust** est installé :
+1. Make sure **Rust** is installed:
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
    ```
 
-2. Clonez le dépôt :
+2. Clone the repository:
    ```bash
    git clone https://github.com/WillIsback/smart-locker.git
    cd smart-locker
    ```
 
-3. Compilez le projet en mode `release` :
+3. Build the project in release mode:
    ```bash
    cargo build --release
    ```
 
-4. Installez le binaire dans `/usr/local/bin` :
+4. Install the binary into `/usr/local/bin`:
    ```bash
    sudo cp target/release/smart-locker /usr/local/bin/
    ```
 
-5. Vérifiez l'installation :
+5. Verify the installation:
    ```bash
    smart-locker --version
    ```
 
 #### **Windows**
 
-1. Installez **Rust** via [rustup](https://rustup.rs/).
+1. Install **Rust** via [rustup](https://rustup.rs/).
 
-2. Clonez le dépôt :
+2. Clone the repository:
    ```powershell
    git clone https://github.com/WillIsback/smart-locker.git
    cd smart-locker
    ```
 
-3. Compilez le projet en mode `release` :
+3. Build the project in release mode:
    ```powershell
    cargo build --release
    ```
 
-4. Ajoutez le binaire au `PATH` :
+4. Add the binary to your `PATH`:
    ```powershell
    $Env:Path += ";$PWD\target\release"
    ```
 
-5. Vérifiez l'installation :
+5. Verify the installation:
    ```powershell
    smart-locker --version
    ```
 
 ---
 
-### 📦 Packages précompilés (à venir)
+### 📦 Precompiled Packages (coming soon)
 
-Nous prévoyons de fournir des **binaires précompilés** pour les principales plateformes (Linux, Windows, macOS). Vous pourrez les télécharger directement depuis la page [Releases](https://github.com/WillIsback/smart-locker.git/1.0.0).
+We plan to provide **precompiled binaries** for major platforms (Linux, Windows, macOS). You’ll be able to download them directly from the [Releases page](https://github.com/WillIsback/smart-locker.git/1.0.0).
 
 ---
 
-### 🧪 Tester l'installation
+### 🧪 Test Your Installation
 
-Une fois installé, testez SmartLocker avec les commandes suivantes :
+Once installed, test SmartLocker with the following commands:
 
 ```bash
 smart-locker init
-smart-locker encrypt -n my_secret -v "Ceci est un test"
+smart-locker encrypt -n my_secret -v "This is a test"
 smart-locker decrypt -n my_secret
 ```
 
 ---
 
-> **Note :** Si vous rencontrez des problèmes lors de l'installation, consultez la section [Issues](https://github.com/WillIsback/smart-locker/issues) ou ouvrez un ticket.
+> **Note:** If you encounter any issues during installation, please check the [Issues section](https://github.com/WillIsback/smart-locker/issues) or open a new ticket.
 
-> 🔐 Projet personnel pour apprendre le Rust en profondeur tout en créant un outil utile au quotidien.
+> 🔐 A personal project to dive deep into Rust while building a useful everyday tool.
+```
+
