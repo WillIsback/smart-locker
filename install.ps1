@@ -4,7 +4,7 @@ $Red = "`e[31m"
 $Yellow = "`e[33m"
 $Reset = "`e[0m"
 
-Write-Host "${Green}🔐 SmartLocker - Installation automatique pour Windows${Reset}"
+Write-Host "${Green}🦀🔐 SmartLocker - Installation automatique pour Windows${Reset}"
 
 # Vérifier si Rust est installé
 if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
@@ -25,16 +25,32 @@ if ($args -contains "nightly") {
 
 # Cloner le dépôt
 Write-Host "${Green}Clonage du dépôt : $RepoUrl (branche : $Branch)${Reset}"
-git clone --branch $Branch $RepoUrl smart-locker-temp
+try {
+    git clone --branch $Branch $RepoUrl smart-locker-temp
+} catch {
+    Write-Host "${Red}Erreur : Impossible de cloner le dépôt. Vérifiez vos permissions et l'URL.${Reset}"
+    exit 1
+}
+
 Set-Location smart-locker-temp
 
 # Construire le projet
 Write-Host "${Green}Construction du projet...${Reset}"
-cargo build --release
+try {
+    cargo build --release
+} catch {
+    Write-Host "${Red}Erreur : La construction du projet a échoué.${Reset}"
+    exit 1
+}
 
 # Installer le binaire
 Write-Host "${Green}Installation du binaire...${Reset}"
-Copy-Item -Path .\target\release\smart-locker.exe -Destination "C:\Program Files\smart-locker\smart-locker.exe" -Force
+try {
+    Copy-Item -Path .\target\release\smart-locker.exe -Destination "C:\Program Files\smart-locker\smart-locker.exe" -Force
+} catch {
+    Write-Host "${Red}Erreur : Impossible de copier le binaire.${Reset}"
+    exit 1
+}
 
 # Nettoyer les fichiers temporaires
 Set-Location ..
