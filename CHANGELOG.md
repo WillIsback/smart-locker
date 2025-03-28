@@ -24,6 +24,8 @@ All notable changes to this project will be documented in this file.
 - *(ci)* Fix commit format for changelog git-cliff
 - *(ci)* Merge branch 'reformat-commits' into dev
 - Ignore release-* directories in .gitignore
+- Ignore release-* directories in .gitignore
+- Ignore target/ directory in .gitignore and resolve conflicts in Cargo.lock
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -31,6 +33,7 @@ All notable changes to this project will be documented in this file.
 - *(release)* Pre-Release alpha
 - *(release)* Pre release beta
 - *(release)* Release of first stable version v0.1.0
+- *(release)* Prepare release v0.1.0
 - *(release)* Prepare release v0.1.0
 - *(release)* Prepare release v0.1.0
 
