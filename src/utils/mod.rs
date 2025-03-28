@@ -1,13 +1,18 @@
-use directories::UserDirs;
 use std::fs;
 use ring::pbkdf2;
 use std::num::NonZeroU32;
+use std::path::PathBuf;
+use std::env;
 
 // Cette fonction initialise le coffre-fort en créant un dossier sécurisé et en générant une clé symétrique.
 pub fn init_locker() {
-    let user_dirs = UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
-    let locker_dir = user_dirs.home_dir().join(".locker");
-
+    // Vérifier si une variable d'environnement définit le chemin du répertoire
+    let locker_dir = if let Ok(custom_home) = env::var("SMART_LOCKER_HOME") {
+        PathBuf::from(custom_home)
+    } else {
+        let user_dirs = directories::UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
+        user_dirs.home_dir().join(".locker")
+    };
     if !locker_dir.exists() {
         fs::create_dir_all(&locker_dir).expect("Erreur lors de la création du dossier ~/.locker");
         println!("✅ Dossier sécurisé créé : {:?}", locker_dir);
