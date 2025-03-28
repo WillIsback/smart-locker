@@ -158,15 +158,15 @@ fn test_decrypt_with_stdout() {
     fs::remove_file(&encrypted_file).expect("Erreur lors de la suppression du fichier de test");
 }
 
-#[test]
 #[cfg(not(feature = "disable_clipboard_tests"))]
+#[test]
 fn test_decrypt_with_clipboard() {
+    use copypasta::{ClipboardContext, ClipboardProvider};
+
     if std::env::var("DISABLE_CLIPBOARD_TESTS").is_ok() {
-        println!("🛑 Test ignoré : test_decrypt_with_clipboard (environnement sans interface graphique)");
+        eprintln!("🛑 Clipboard test skipped via env var");
         return;
     }
-
-    use copypasta::{ClipboardContext, ClipboardProvider};
 
     let user_dirs = directories::UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
     let locker_dir = user_dirs.home_dir().join(".locker");
@@ -174,23 +174,15 @@ fn test_decrypt_with_clipboard() {
     let secret_name = "test_decrypt_with_clipboard_secret";
     let secret_value = "Ceci est un test";
 
-    // Chiffrer le secret
     encrypt::encrypt(secret_value, secret_name);
 
-    // Déchiffrer le secret et copier dans le presse-papier
     let decrypted_value = decrypt::decrypt(secret_name);
     let mut ctx = ClipboardContext::new().expect("Impossible d'accéder au presse-papier");
-    ctx.set_contents(decrypted_value.clone())
-        .expect("Erreur lors de la copie dans le presse-papier");
+    ctx.set_contents(decrypted_value.clone()).expect("Erreur lors de la copie");
 
-    // Vérifier que le contenu du presse-papier est correct
     let clipboard_content = ctx.get_contents().expect("Erreur lors de la lecture du presse-papier");
-    assert_eq!(
-        clipboard_content, secret_value,
-        "Le contenu du presse-papier ne correspond pas au secret déchiffré"
-    );
+    assert_eq!(clipboard_content, secret_value);
 
-    // Nettoyer les fichiers de test
     let encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
-    fs::remove_file(&encrypted_file).expect("Erreur lors de la suppression du fichier de test");
+    std::fs::remove_file(&encrypted_file).expect("Erreur lors de la suppression");
 }
