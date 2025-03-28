@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.0] - 2025-03-28
 
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Prepare release v0.1.0
+- *(release)* Prepare release v0.1.0
+- *(release)* Prepare release v0.1.0
+
+## [0.1.0] - 2025-03-28
+
 ### 🚀 Features
 
 - *(devops)* Automate binary delivery and release publication
@@ -33,8 +41,6 @@ All notable changes to this project will be documented in this file.
 - *(release)* Pre-Release alpha
 - *(release)* Pre release beta
 - *(release)* Release of first stable version v0.1.0
-- *(release)* Prepare release v0.1.0
-- *(release)* Prepare release v0.1.0
 - *(release)* Prepare release v0.1.0
 - *(release)* Prepare release v0.1.0
 - *(release)* Prepare release v0.1.0
