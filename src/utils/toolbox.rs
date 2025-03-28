@@ -1,18 +1,14 @@
 use std::fs;
 use ring::pbkdf2;
 use std::num::NonZeroU32;
+use directories::UserDirs;
 use std::path::PathBuf;
 use std::env;
 
-// This function initializes the vault by creating a secure folder and generating a symmetric key.
+
+/// Initialise le répertoire `.locker` et génère une clé symétrique si nécessaire.
 pub fn init_locker() {
-    // Check if an environment variable defines the directory path
-    let locker_dir: PathBuf = if let Ok(custom_home) = env::var("SMART_LOCKER_HOME") {
-        PathBuf::from(custom_home)
-    } else {
-        let user_dirs = directories::UserDirs::new().expect("Unable to access user folder");
-        user_dirs.home_dir().join(".locker")
-    };
+    let locker_dir = get_locker_dir();
     if !locker_dir.exists() {
         fs::create_dir_all(&locker_dir).expect("Error creating folder ~/.locker");
         println!("✅ Secure folder created: {:?}", locker_dir);
@@ -26,7 +22,6 @@ pub fn init_locker() {
     } else {
         println!("🔑 A key already exists: {:?}", key_path);
     }
-
 }
 
 pub fn generate_key() -> Vec<u8> {
@@ -49,4 +44,15 @@ pub fn derive_key_from_passphrase(passphrase: &str, salt: &[u8]) -> Vec<u8> {
         &mut key,
     );
     key.to_vec()
+}
+
+
+/// Retourne le chemin du répertoire `.locker`.
+pub fn get_locker_dir() -> PathBuf {
+    if let Ok(custom_home) = env::var("SMART_LOCKER_HOME") {
+        PathBuf::from(custom_home)
+    } else {
+        let user_dirs = UserDirs::new().expect("Unable to access user directory");
+        user_dirs.home_dir().join(".locker")
+    }
 }

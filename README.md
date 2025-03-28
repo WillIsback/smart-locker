@@ -59,7 +59,6 @@ EXAMPLE:
 ## 🧱 Future Steps
 
 - [ ] Add vault with auto-expiration
-- [V] `--clipboard` option to temporarily copy secrets into RAM
 - [ ] Git pre-commit plugin to block secrets from being committed
 
 ## 📈 Why This Project?
@@ -198,9 +197,152 @@ smart-locker decrypt -n my_secret
 ```
 
 ---
+### **🔧 Features and Capabilities of SmartLocker CLI**
+
+The `SmartLocker` CLI provides a robust and user-friendly interface for securely managing sensitive secrets. Below is a detailed breakdown of its features and capabilities:
+
+---
+
+### **🔑 Initialization (`init`)**
+- **Purpose:** Initializes the vault by creating a secure folder (`~/.locker`) and generating a symmetric key (`locker.key`).
+- **Options:**
+  - `--passphrase`: Generate the symmetric key from a passphrase using PBKDF2.
+- **Examples:**
+  ```bash
+  # Generate a random symmetric key
+  smart-locker init
+
+  # Generate a symmetric key from a passphrase
+  smart-locker init --passphrase "my_secure_passphrase"
+  ```
+
+---
+
+### **🔒 Encryption (`encrypt`)**
+- **Purpose:** Encrypts a secret and stores it securely in the vault.
+- **Options:**
+  - `--name (-n)`: Name of the secret (required).
+  - `--value (-v)`: Value of the secret to encrypt (optional). If not provided, the value is read from `stdin`.
+- **Examples:**
+  ```bash
+  # Encrypt a secret with a value
+  smart-locker encrypt -n my_secret -v "This is a test"
+
+  # Encrypt a secret by reading the value from stdin
+  echo "This is a test" | smart-locker encrypt -n my_secret
+  ```
+
+---
+
+### **🔓 Decryption (`decrypt`)**
+- **Purpose:** Decrypts a secret and either displays it in the terminal or copies it to the clipboard.
+- **Options:**
+  - `--name (-n)`: Name of the secret to decrypt (required).
+  - `--clipboard (-c)`: Copies the decrypted secret to the clipboard instead of displaying it.
+- **Examples:**
+  ```bash
+  # Decrypt a secret and display it in the terminal
+  smart-locker decrypt -n my_secret
+
+  # Decrypt a secret and copy it to the clipboard
+  smart-locker decrypt -n my_secret --clipboard
+  ```
+
+---
+
+### **📜 Listing Secrets (`list`)**
+- **Purpose:** Lists all the secrets stored in the vault.
+- **Examples:**
+  ```bash
+  # List all secrets
+  smart-locker list
+  ```
+
+---
+
+### **🗑️ Removing Secrets (`remove`)**
+- **Purpose:** Deletes a secret from the vault.
+- **Options:**
+  - `--name (-n)`: Name of the secret to delete (required).
+- **Examples:**
+  ```bash
+  # Remove a secret
+  smart-locker remove -n my_secret
+  ```
+
+---
+
+### **📋 Clipboard Integration**
+- **Purpose:** Allows seamless copying of decrypted secrets to the clipboard for quick use.
+- **Supported Platforms:**
+  - **Linux:** Uses `copypasta` for clipboard management.
+  - **Windows (WSL):** Uses `clip.exe` for clipboard integration.
+- **Examples:**
+  ```bash
+  # Decrypt a secret and copy it to the clipboard
+  smart-locker decrypt -n my_secret --clipboard
+  ```
+
+---
+
+### **📂 Vault Structure**
+The vault is stored in the `~/.locker` directory and contains:
+- `locker.key`: The symmetric key used for encryption and decryption.
+- `.slock` files: Encrypted secrets, named after the secret's name.
+
+Example structure:
+```
+~/.locker/
+├── locker.key         # Symmetric key
+├── my_secret.slock    # Encrypted secret
+├── api_key.slock      # Encrypted secret
+└── db_password.slock  # Encrypted secret
+```
+
+---
+
+### **🛠️ Additional Features**
+- **Pipe Support:** Allows secrets to be passed via `stdin` for encryption.
+  ```bash
+  echo "my_secret_value" | smart-locker encrypt -n my_secret
+  ```
+- **Cross-Platform Compatibility:** Works seamlessly on Linux and Windows.
+- **Customizable Key Generation:** Use a passphrase to derive the symmetric key for added security.
+---
+
+### **🚀 Example Workflow**
+```bash
+# Step 1: Initialize the vault
+smart-locker init
+
+# Step 2: Encrypt a secret
+smart-locker encrypt -n my_secret -v "This is a test"
+
+# Step 3: List all secrets
+smart-locker list
+
+# Step 4: Decrypt a secret and display it
+smart-locker decrypt -n my_secret
+
+# Step 5: Decrypt a secret and copy it to the clipboard
+smart-locker decrypt -n my_secret --clipboard
+
+# Step 6: Remove a secret
+smart-locker remove -n my_secret
+```
+
+---
 
 > 📝 **Note:** If you encounter any issues during installation, please check the [Issues section](https://github.com/WillIsback/smart-locker/issues) or open a new ticket.
 
-> 🦀🔐 *SmartLocker is a personal project to explore Rust deeply while building a useful security tool for everyday DevOps workflows.*
-```
+> 🦀🔐 *SmartLocker is a personal project to explore Rust deeply while building a useful security tool for everyday DevOps workflows.
 
+
+## 📝 License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## 🔃 Changelog
+See the [CHANGELOG](CHANGELOG.md) for a detailed list of changes and updates.
+
+## 📜 Contributing
+Please use the commit message format `feat: <description>` for new features and `fix: <description>` for bug fixes. For more details, see the [Contributing Guide](CONTRIBUTING.md).

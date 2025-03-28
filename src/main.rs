@@ -1,28 +1,26 @@
-mod commands;
 // Import necessary modules
 use std::fs;
 use std::io::Read;
-use directories::UserDirs;
 use clap::{Arg, Command};
-use commands::encrypt::encrypt;
-use commands::decrypt::decrypt;
-use commands::list::list_secrets;
-use commands::remove::remove_secret;
-use smart_locker::utils::init_locker;
-use smart_locker::utils::derive_key_from_passphrase;
 use colored::*; // For colored output
-use std::env;
-
+use smart_locker::commands::{
+    decrypt::decrypt,
+    encrypt::encrypt,
+    list::list_secrets,
+    remove::remove_secret,
+};
+use smart_locker::utils::toolbox::{
+    derive_key_from_passphrase,
+    init_locker,
+    get_locker_dir,
+};
 fn main() {
     // Display the logo only for general help
     if std::env::args().any(|arg| arg == "--help" || arg == "-h") {
         display_logo();
     }
-    println!("Current working directory: {:?}", env::current_dir().unwrap());
     // Check if the ~/.locker folder exists
-    let user_dirs = UserDirs::new().expect("Unable to access the user directory");
-    let locker_dir = user_dirs.home_dir().join(".locker");
-
+    let locker_dir = get_locker_dir();
     // CLI command management
     let matches = Command::new("SmartLocker")
     .version("1.0")
@@ -171,9 +169,9 @@ fn main() {
     } else if let Some(matches) = matches.subcommand_matches("decrypt") {
         let name = matches.get_one::<String>("name").unwrap();
         let decrypted_value = decrypt(name);
+
         if matches.get_flag("clipboard") {
             if cfg!(target_os = "linux") && std::env::var("WSL_DISTRO_NAME").is_ok() {
-                // Use clip.exe for WSL
                 use std::process::{Command, Stdio};
                 let mut child = Command::new("clip.exe")
                     .stdin(Stdio::piped())
@@ -196,9 +194,12 @@ fn main() {
                     .expect("Error copying to the clipboard");
                 println!("{}", "✅ Secret copied to the clipboard!".green());
             }
+        } else {
+            // Print the decrypted value to the terminal
+            println!("{}", format!("🔓 Decrypted secret: {}", decrypted_value).green());
         }
     } else if matches.subcommand_matches("list").is_some() {
-        let secrets = list_secrets(&locker_dir);
+        let secrets = list_secrets();
         if secrets.is_empty() {
             println!("{}", "⚠️ No secrets found.".yellow());
         } else {

@@ -1,8 +1,8 @@
 use std::fs;
 use std::io::Read;
-use directories::UserDirs;
-use smart_locker::commands::{encrypt, decrypt, list, remove};
-use smart_locker::utils::derive_key_from_passphrase;
+use smart_locker::commands::{decrypt, encrypt, list, remove};
+use smart_locker::utils::toolbox::{derive_key_from_passphrase, get_locker_dir};
+
 
 #[test]
 fn test_derive_key_from_passphrase() {
@@ -15,8 +15,7 @@ fn test_derive_key_from_passphrase() {
 
 #[test]
 fn test_encrypt_and_decrypt() {
-    let user_dirs = UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
-    let locker_dir = user_dirs.home_dir().join(".locker");
+    let locker_dir = get_locker_dir();
     let key_path = locker_dir.join("locker.key");
 
     // Vérifier et créer le dossier sécurisé
@@ -65,8 +64,7 @@ fn test_encrypt_and_decrypt() {
 
 #[test]
 fn test_list_secrets() {
-    let user_dirs = UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
-    let locker_dir = user_dirs.home_dir().join(".locker");
+    let locker_dir = get_locker_dir();
 
     if !locker_dir.exists() {
         fs::create_dir_all(&locker_dir).expect("Erreur lors de la création du dossier ~/.locker");
@@ -75,7 +73,7 @@ fn test_list_secrets() {
     let test_file = locker_dir.join("test_list_secrets_secret.slock");
     fs::write(&test_file, b"test").expect("Erreur lors de la création du fichier de test");
 
-    let secrets = list::list_secrets(&locker_dir);
+    let secrets = list::list_secrets();
 
     assert!(
         secrets.contains(&"test_list_secrets_secret.slock".to_string()),
@@ -88,8 +86,7 @@ fn test_list_secrets() {
 
 #[test]
 fn test_remove_secret() {
-    let user_dirs = UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
-    let locker_dir = user_dirs.home_dir().join(".locker");
+    let locker_dir = get_locker_dir();
 
     let test_file = locker_dir.join("test_remove_secret_secret.slock");
     fs::write(&test_file, b"test").expect("Erreur lors de la création du fichier de test");
@@ -103,8 +100,7 @@ fn test_remove_secret() {
 fn test_encrypt_with_stdin() {
     use std::io::Cursor;
 
-    let user_dirs = UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
-    let locker_dir = user_dirs.home_dir().join(".locker");
+    let locker_dir = get_locker_dir();
 
     // Créer un fichier temporaire pour simuler stdin
     let secret_name = "test_encrypt_with_stdin_secret";
@@ -136,8 +132,7 @@ fn test_encrypt_with_stdin() {
 
 #[test]
 fn test_decrypt_with_stdout() {
-    let user_dirs = UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
-    let locker_dir = user_dirs.home_dir().join(".locker");
+    let locker_dir = get_locker_dir();
 
     let secret_name = "test_decrypt_with_stdout_secret";
     let secret_value = "Ceci est un test";
@@ -168,8 +163,7 @@ fn test_decrypt_with_clipboard() {
         return;
     }
 
-    let user_dirs = directories::UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
-    let locker_dir = user_dirs.home_dir().join(".locker");
+    let locker_dir = get_locker_dir();
 
     let secret_name = "test_decrypt_with_clipboard_secret";
     let secret_value = "Ceci est un test";

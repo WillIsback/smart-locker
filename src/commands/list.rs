@@ -1,10 +1,11 @@
 use std::fs;
-use std::path::PathBuf;
+use crate::utils::toolbox::get_locker_dir;
 
 /// Returns a list of available secrets in the secure folder.
-pub fn list_secrets(locker_dir: &PathBuf) -> Vec<String> {
+pub fn list_secrets() -> Vec<String> {
+    let locker_dir = get_locker_dir();
     let mut secrets = Vec::new();
-    if let Ok(entries) = fs::read_dir(locker_dir) {
+    if let Ok(entries) = fs::read_dir(&locker_dir) {
         for entry in entries.flatten() {
             if let Ok(file_type) = entry.file_type() {
                 if file_type.is_file() {

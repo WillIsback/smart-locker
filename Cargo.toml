@@ -20,7 +20,15 @@ flate2 = "1.0"
 default = []
 disable_clipboard_tests = []
 
+[lib]
+name = "smart_locker"
+path = "src/lib.rs"
+
+[[bin]]
+name = "smart-locker"
+path = "src/main.rs"
+
 [[test]]
 name = "test"
-path = "src/tests/test.rs"
+path = "src/tests/unittest.rs"
 

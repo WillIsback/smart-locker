@@ -1,14 +1,14 @@
-use aes_gcm::{Aes256Gcm, Key, Nonce}; // AES-GCM
-use aes_gcm::aead::Aead; // Import du trait pour le chiffrement
-use aes_gcm::KeyInit; // Import du trait nécessaire pour initialiser le chiffreur
+
+use aes_gcm::{Aes256Gcm, Key, Nonce};
+use aes_gcm::aead::Aead;
+use aes_gcm::KeyInit;
 use std::fs;
-use directories::UserDirs;
 use flate2::read::GzDecoder;
 use std::io::Read;
+use crate::utils::toolbox::get_locker_dir;
 
 pub fn decrypt(name: &str) -> String {
-    let user_dirs = UserDirs::new().expect("Unable to access user directory");
-    let locker_dir = user_dirs.home_dir().join(".locker");
+    let locker_dir = get_locker_dir();
     let key_path = locker_dir.join("locker.key");
 
     // Lire la clé symétrique
@@ -37,6 +37,5 @@ pub fn decrypt(name: &str) -> String {
     decoder
         .read_to_string(&mut decompressed_data)
         .expect("Error during data decompression");
-
     decompressed_data
 }
