@@ -159,14 +159,16 @@ fn test_decrypt_with_stdout() {
 }
 
 #[test]
+#[cfg(not(feature = "disable_clipboard_tests"))]
 fn test_decrypt_with_clipboard() {
     if std::env::var("DISABLE_CLIPBOARD_TESTS").is_ok() {
         println!("🛑 Test ignoré : test_decrypt_with_clipboard (environnement sans interface graphique)");
         return;
     }
+
     use copypasta::{ClipboardContext, ClipboardProvider};
 
-    let user_dirs = UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
+    let user_dirs = directories::UserDirs::new().expect("Impossible d'accéder au dossier utilisateur");
     let locker_dir = user_dirs.home_dir().join(".locker");
 
     let secret_name = "test_decrypt_with_clipboard_secret";
