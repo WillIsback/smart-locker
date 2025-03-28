@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - *(release)* Prepare release v0.1.0
 - *(release)* Prepare release v0.1.0
 - Merge dev into preprod for release v0.1.0
+- *(release)* Prepare release v0.1.0
 
 ## [0.1.0] - 2025-03-28
 
