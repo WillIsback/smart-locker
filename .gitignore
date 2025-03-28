@@ -31,6 +31,9 @@ Thumbs.db
 # Ignorer le dossier CI local
 ci/
 
+# Ignorer les répertoires de versionnement de type release-x.x.x
+release-*/
+
 # Added by cargo
 #
 # already existing elements were commented out
