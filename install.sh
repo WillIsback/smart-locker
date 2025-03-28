@@ -17,7 +17,7 @@ if ! command -v cargo &> /dev/null; then
 fi
 
 # Définir le dépôt Git et la branche par défaut
-REPO_URL="https://github.com/WillIsback/SmartLocker.git"
+REPO_URL="https://github.com/WillIsback/smart-locker.git"
 BRANCH="main"
 
 # Vérifier si l'argument "nightly" est passé

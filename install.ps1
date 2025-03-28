@@ -13,7 +13,7 @@ if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
 }
 
 # Définir le dépôt Git et la branche par défaut
-$RepoUrl = "https://github.com/WillIsback/SmartLocker.git"
+$RepoUrl = "https://github.com/WillIsback/smart-locker.git"
 $Branch = "main"
 
 # Vérifier si l'argument "nightly" est passé
