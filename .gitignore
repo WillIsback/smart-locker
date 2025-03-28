@@ -34,6 +34,8 @@ ci/
 # Ignorer les répertoires de versionnement de type release-x.x.x
 release-*/
 
+.drone.yml
+
 # Added by cargo
 #
 # already existing elements were commented out
