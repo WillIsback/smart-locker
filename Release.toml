@@ -1,9 +1,0 @@
-# filepath: /home/william/projet/smart-locker/Release.toml
-[release]
-# Inclure le changelog généré par git-cliff dans le commit de release
-commit_message = "chore(release): prepare for {{version}}"
-tag_message = "Release {{version}}"
-tag_prefix = "v"
-push = true
-registry = "crates-io"  # Publier sur crates.io
-generate_release_notes = false  # Désactiver les notes automatiques (on utilise git-cliff)

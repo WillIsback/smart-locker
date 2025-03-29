@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - preprod
+      - main
+      - dev
+
 
 jobs:
   # 1. Linting
@@ -123,6 +126,7 @@ jobs:
         with:
           name: documentation
           path: target/doc
+      
 
   # 6. Release
   release:
@@ -130,7 +134,6 @@ jobs:
     container:
       image: rust:latest
       options: --user root
-    needs: [test, docs]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
@@ -145,61 +148,34 @@ jobs:
           git config --global --add safe.directory /__w/smart-locker/smart-locker
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/WillIsback/smart-locker.git
 
-      - name: 🛠️ Install jq
-        run: |
-          apt-get update
-          apt-get install -y jq
-
       - name: 🛠️ Install Rust tools
         run: |
           cargo install git-cliff
           cargo install cargo-release
 
-      - name: 🏷️ Extract version from Cargo.toml
-        id: version
+      # Dry-run pour dev
+      - name: 🚀 Run cargo release (dry-run for dev)
+        if: github.ref == 'refs/heads/dev'
         run: |
-          # Extract the version from Cargo.toml
-          TARGET_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
-          echo "Version extracted from Cargo.toml: $TARGET_VERSION"
-
-          # Export the version for later steps
-          echo "TARGET_VERSION=$TARGET_VERSION" >> $GITHUB_ENV
-
-      - name: 🏷️ Generate and push Git tag
-        run: |
-          # Check if the tag already exists
-          if git rev-parse "v${{ env.TARGET_VERSION }}" >/dev/null 2>&1; then
-            echo "⚠️ Tag v${{ env.TARGET_VERSION }} already exists. It will be overwritten."
-            git tag -d "v${{ env.TARGET_VERSION }}"
-            git push origin ":refs/tags/v${{ env.TARGET_VERSION }}"
-          fi
-
-          # Create and force push the tag
-          git tag -a "v${{ env.TARGET_VERSION }}" -m "Release version v${{ env.TARGET_VERSION }}"
-          git push --force origin "v${{ env.TARGET_VERSION }}"
-
-      - name: 🚀 Run cargo release with synchronized version
-        run: |
-          cargo release --execute --no-tag --no-publish
+          cargo release prepatch --execute --dry-run --no-release
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-      - name: 🚀 Publish to crates.io
+      # Pré-version pour preprod
+      - name: 🚀 Run cargo release (pre-version for preprod)
+        if: github.ref == 'refs/heads/preprod'
         run: |
-          cargo publish
+          cargo release rc --execute
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-      - name: 📝 Generate changelog
+      # Release stable pour main
+      - name: 🚀 Run cargo release (stable release for main)
+        if: github.ref == 'refs/heads/main'
         run: |
-          git-cliff --tag "v${{ env.TARGET_VERSION }}" > CHANGELOG.md
-          echo "✅ Changelog generated successfully."
-
-      - name: 🏷️ Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            smartlocker_linux.tar.gz
-            smartlocker_windows.zip
-          body_path: CHANGELOG.md
-          overwrite: true
+          cargo release patch --execute
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
