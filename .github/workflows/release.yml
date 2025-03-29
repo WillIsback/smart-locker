@@ -179,7 +179,7 @@ jobs:
 
       - name: 🚀 Run cargo release with synchronized version
         run: |
-          cargo release --execute --tag-name "v${{ env.TARGET_VERSION }}" --no-publish
+          cargo release --execute --no-tag --no-publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
@@ -201,3 +201,4 @@ jobs:
             smartlocker_linux.tar.gz
             smartlocker_windows.zip
           body_path: CHANGELOG.md
+          overwrite: true
