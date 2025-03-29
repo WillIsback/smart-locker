@@ -173,9 +173,9 @@ jobs:
             git push origin ":refs/tags/v${{ env.TARGET_VERSION }}"
           fi
 
-          # Create and push the tag
+          # Create and force push the tag
           git tag -a "v${{ env.TARGET_VERSION }}" -m "Release version v${{ env.TARGET_VERSION }}"
-          git push origin "v${{ env.TARGET_VERSION }}"
+          git push --force origin "v${{ env.TARGET_VERSION }}"
 
       - name: 🚀 Run cargo release with synchronized version
         run: |
