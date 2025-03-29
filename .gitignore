@@ -43,3 +43,5 @@ release-*/
 .secrets
 .env
 local_artifacts/
+
+.github/workflows/release_local.yml

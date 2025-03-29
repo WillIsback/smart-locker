@@ -83,7 +83,7 @@ jobs:
           zip -r smartlocker_windows.zip dist/windows
 
       - name: 📤 Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: |
@@ -119,7 +119,7 @@ jobs:
       - name: 📚 Generate documentation online
         run: cargo doc --no-deps
       - name: 📤 Upload documentation
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: documentation
           path: target/doc
