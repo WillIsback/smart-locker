@@ -64,8 +64,6 @@ jobs:
       - name: 🛠️ Install Rust tools and targets
         run: |
           rustup target add x86_64-pc-windows-gnu
-          cargo install git-cliff
-          cargo install cargo-release
 
       - name: 🛠️ Build for Linux
         run: cargo build --release
@@ -126,7 +124,6 @@ jobs:
           name: documentation
           path: target/doc
 
-
   # 6. Release
   release:
     runs-on: ubuntu-latest
@@ -148,14 +145,54 @@ jobs:
           git config --global --add safe.directory /__w/smart-locker/smart-locker
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/WillIsback/smart-locker.git
 
+      - name: 🛠️ Install jq
+        run: |
+          apt-get update
+          apt-get install -y jq
+
+      - name: 🛠️ Install Rust tools
+        run: |
+          cargo install cargo-release
+
+      - name: 🏷️ Extract version from Cargo.toml
+        id: version
+        run: |
+          # Extract the version from Cargo.toml
+          TARGET_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          echo "Version extracted from Cargo.toml: $TARGET_VERSION"
+
+          # Export the version for later steps
+          echo "TARGET_VERSION=$TARGET_VERSION" >> $GITHUB_ENV
+
+      - name: 🏷️ Generate and push Git tag
+        run: |
+          # Check if the tag already exists
+          if git rev-parse "v${{ env.TARGET_VERSION }}" >/dev/null 2>&1; then
+            echo "⚠️ Tag v${{ env.TARGET_VERSION }} already exists. It will be overwritten."
+            git tag -d "v${{ env.TARGET_VERSION }}"
+            git push origin ":refs/tags/v${{ env.TARGET_VERSION }}"
+          fi
+
+          # Create and push the tag
+          git tag -a "v${{ env.TARGET_VERSION }}" -m "Release version v${{ env.TARGET_VERSION }}"
+          git push origin "v${{ env.TARGET_VERSION }}"
+
+      - name: 🚀 Run cargo release with synchronized version
+        run: |
+          cargo release --execute --tag-name "v${{ env.TARGET_VERSION }}" --no-publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: 🚀 Publish to crates.io
+        run: |
+          cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
       - name: 📝 Generate changelog
         run: |
-          git-cliff --tag $(git describe --tags --abbrev=0) > CHANGELOG.md
+          git-cliff --tag "v${{ env.TARGET_VERSION }}" > CHANGELOG.md
           echo "✅ Changelog generated successfully."
-
-      - name: 🚀 Run cargo-release
-        run: |
-          cargo release patch --execute
 
       - name: 🏷️ Create GitHub Release
         uses: softprops/action-gh-release@v2
