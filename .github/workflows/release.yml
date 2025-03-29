@@ -152,6 +152,7 @@ jobs:
 
       - name: 🛠️ Install Rust tools
         run: |
+          cargo install git-cliff
           cargo install cargo-release
 
       - name: 🏷️ Extract version from Cargo.toml
