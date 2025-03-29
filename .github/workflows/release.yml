@@ -145,6 +145,7 @@ jobs:
         run: |
           git config --global user.email "ci@smartlocker.local"
           git config --global user.name "SmartLocker CI"
+          git config --global --add safe.directory /__w/smart-locker/smart-locker
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/WillIsback/smart-locker.git
 
       - name: 📝 Generate changelog
