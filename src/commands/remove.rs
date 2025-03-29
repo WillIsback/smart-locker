@@ -1,5 +1,5 @@
-use std::fs;
 use crate::utils::toolbox::get_locker_dir;
+use std::fs;
 
 pub fn remove_secret(name: &str) {
     let locker_dir = get_locker_dir();

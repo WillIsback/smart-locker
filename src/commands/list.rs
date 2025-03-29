@@ -1,5 +1,5 @@
-use std::fs;
 use crate::utils::toolbox::get_locker_dir;
+use std::fs;
 
 /// Returns a list of available secrets in the secure folder.
 pub fn list_secrets() -> Vec<String> {

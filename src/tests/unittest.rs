@@ -1,8 +1,7 @@
-use std::fs;
-use std::io::Read;
 use smart_locker::commands::{decrypt, encrypt, list, remove};
 use smart_locker::utils::toolbox::{derive_key_from_passphrase, get_locker_dir};
-
+use std::fs;
+use std::io::Read;
 
 #[test]
 fn test_derive_key_from_passphrase() {
@@ -10,7 +9,11 @@ fn test_derive_key_from_passphrase() {
     let salt = b"mon_salt";
     let key = derive_key_from_passphrase(passphrase, salt);
 
-    assert_eq!(key.len(), 32, "La clé dérivée doit avoir une longueur de 32 octets");
+    assert_eq!(
+        key.len(),
+        32,
+        "La clé dérivée doit avoir une longueur de 32 octets"
+    );
 }
 
 #[test]
@@ -39,7 +42,10 @@ fn test_encrypt_and_decrypt() {
     encrypt::encrypt(secret_value, secret_name);
 
     let encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
-    println!("Vérification de l'existence du fichier chiffré : {:?}", encrypted_file);
+    println!(
+        "Vérification de l'existence du fichier chiffré : {:?}",
+        encrypted_file
+    );
 
     // Vérifier que le fichier chiffré a été créé
     assert!(
@@ -129,7 +135,6 @@ fn test_encrypt_with_stdin() {
     fs::remove_file(&encrypted_file).expect("Erreur lors de la suppression du fichier de test");
 }
 
-
 #[test]
 fn test_decrypt_with_stdout() {
     let locker_dir = get_locker_dir();
@@ -172,9 +177,12 @@ fn test_decrypt_with_clipboard() {
 
     let decrypted_value = decrypt::decrypt(secret_name);
     let mut ctx = ClipboardContext::new().expect("Impossible d'accéder au presse-papier");
-    ctx.set_contents(decrypted_value.clone()).expect("Erreur lors de la copie");
+    ctx.set_contents(decrypted_value.clone())
+        .expect("Erreur lors de la copie");
 
-    let clipboard_content = ctx.get_contents().expect("Erreur lors de la lecture du presse-papier");
+    let clipboard_content = ctx
+        .get_contents()
+        .expect("Erreur lors de la lecture du presse-papier");
     assert_eq!(clipboard_content, secret_value);
 
     let encrypted_file = locker_dir.join(format!("{}.slock", secret_name));

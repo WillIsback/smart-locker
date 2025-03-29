@@ -1,0 +1,163 @@
+name: Local CI/CD Pipeline for SmartLocker
+
+on:
+  push:
+    branches:
+      - preprod
+
+jobs:
+  # 1. Linting
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+      - name: 🧰 Install build dependencies
+        run: rustup component add clippy
+      - name: 🧹 Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  # 2. Formatage
+  format:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+      - name: 🧰 Install build dependencies
+        run: rustup component add rustfmt
+      - name: 🧹 Check formatting
+        run: cargo fmt --all -- --check
+
+  # 3. Build cross-platform
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🧰 Install build dependencies
+        run: |
+          apt-get update -qq > /dev/null
+          apt-get install -y -qq \
+            build-essential \
+            gcc-mingw-w64 \
+            curl \
+            pkg-config \
+            zip \
+            git \
+            nodejs \
+            libssl-dev \
+            > /dev/null 2>&1 || {
+              echo "❌ Failed to install packages"
+              exit 1
+            }
+      
+      - name: 🛠️ Install Rust tools and targets
+        run: |
+          rustup target add x86_64-pc-windows-gnu
+          cargo install git-cliff
+          cargo install cargo-release
+
+      - name: 🛠️ Build for Linux
+        run: cargo build --release
+
+      - name: 🛠️ Build for Windows
+        run: |
+          cargo build --release --target x86_64-pc-windows-gnu
+
+      - name: 📦 Archive binaries
+        run: |
+          mkdir -p dist/linux dist/windows
+          cp target/release/smart-locker dist/linux/
+          tar -czf smartlocker_linux.tar.gz -C dist linux
+          cp target/x86_64-pc-windows-gnu/release/smart-locker.exe dist/windows/
+          zip -r smartlocker_windows.zip dist/windows
+
+      - name: 📤 Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: |
+            smartlocker_linux.tar.gz
+            smartlocker_windows.zip
+
+
+
+  # 4. Tests unitaires
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    needs: [lint, format, build]
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+      - name: 🧪 Run tests
+        run: cargo test --release --features disable_clipboard_tests -- --nocapture
+
+
+  # 5 Documentation 
+  docs:
+    name: docs-online
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+      - name: 📚 Generate documentation online
+        run: cargo doc --no-deps
+      - name: 📤 Upload documentation
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation
+          path: target/doc
+
+
+  # 6. Release
+  release:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    needs: [test, docs]
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🔐 Configure Git for OAuth
+        run: |
+          git config --global user.email "ci@smartlocker.local"
+          git config --global user.name "SmartLocker CI"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/WillIsback/smart-locker.git
+
+      - name: 📝 Generate changelog
+        run: |
+          git-cliff --tag $(git describe --tags --abbrev=0) > CHANGELOG.md
+          echo "✅ Changelog generated successfully."
+
+      - name: 🚀 Run cargo-release
+        run: |
+          cargo release patch --execute
+
+      - name: 🏷️ Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            smartlocker_linux.tar.gz
+            smartlocker_windows.zip
+          body_path: CHANGELOG.md

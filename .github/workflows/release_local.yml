@@ -1,0 +1,142 @@
+name: Local CI/CD Pipeline for SmartLocker
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  # 1. Linting
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+      - name: 🧰 Install build dependencies
+        run: rustup component add clippy
+      - name: 🧹 Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  # 2. Formatage
+  format:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+      - name: 🧰 Install build dependencies
+        run: rustup component add rustfmt
+      - name: 🧹 Check formatting
+        run: cargo fmt --all -- --check
+
+  # 3. Build cross-platform
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🧰 Install build dependencies
+        run: |
+          apt-get update -qq > /dev/null
+          apt-get install -y -qq \
+            build-essential \
+            gcc-mingw-w64 \
+            curl \
+            pkg-config \
+            zip \
+            git \
+            nodejs \
+            libssl-dev \
+            > /dev/null 2>&1 || {
+              echo "❌ Failed to install packages"
+              exit 1
+            }
+      
+      - name: 🛠️ Install Rust tools and targets
+        run: |
+          rustup target add x86_64-pc-windows-gnu
+          cargo install git-cliff
+          cargo install cargo-release
+
+      - name: 🛠️ Build for Linux
+        run: cargo build --release
+
+      - name: 🛠️ Build for Windows
+        run: |
+          cargo build --release --target x86_64-pc-windows-gnu
+
+      - name: 📦 Archive binaries
+        run: |
+          mkdir -p dist/linux dist/windows
+          cp target/release/smart-locker dist/linux/
+          tar -czf smartlocker_linux.tar.gz -C dist linux
+          cp target/x86_64-pc-windows-gnu/release/smart-locker.exe dist/windows/
+          zip -r smartlocker_windows.zip dist/windows
+
+
+      - name: 📤 Save build artifacts locally
+        run: |
+          mkdir -p local_artifacts
+          cp smartlocker_linux.tar.gz smartlocker_windows.zip local_artifacts/
+
+  # 4. Tests unitaires
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    needs: [lint, format, build]
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+      - name: 🧪 Run tests
+        run: cargo test --release --features disable_clipboard_tests -- --nocapture
+
+
+  # 5 Documentation 
+  docs:
+    name: docs-online
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+      - name: 📚 Generate documentation online
+        run: cargo doc --no-deps
+      - name: 📤 Save documentation locally
+        run: |
+          mkdir -p local_artifacts
+          cp -r target/doc local_artifacts/
+
+
+  # 6. Release
+  release:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:latest
+      options: --user root
+    needs: [test, docs]
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 📝 Generate changelog
+        run: |
+          git-cliff --tag $(git describe --tags --abbrev=0) > CHANGELOG.md
+          echo "✅ Changelog generated successfully."
+
+      - name: 🚀 Run cargo-release
+        run: |
+          cargo release patch --execute

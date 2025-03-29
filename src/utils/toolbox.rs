@@ -1,10 +1,9 @@
-use std::fs;
-use ring::pbkdf2;
-use std::num::NonZeroU32;
 use directories::UserDirs;
-use std::path::PathBuf;
+use ring::pbkdf2;
 use std::env;
-
+use std::fs;
+use std::num::NonZeroU32;
+use std::path::PathBuf;
 
 /// Initialise le répertoire `.locker` et génère une clé symétrique si nécessaire.
 pub fn init_locker() {
@@ -45,7 +44,6 @@ pub fn derive_key_from_passphrase(passphrase: &str, salt: &[u8]) -> Vec<u8> {
     );
     key.to_vec()
 }
-
 
 /// Retourne le chemin du répertoire `.locker`.
 pub fn get_locker_dir() -> PathBuf {

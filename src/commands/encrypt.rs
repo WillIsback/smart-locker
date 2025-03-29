@@ -1,11 +1,11 @@
-use aes_gcm::{Aes256Gcm, Key, Nonce};
-use aes_gcm::KeyInit;
+use crate::utils::toolbox::get_locker_dir;
 use aes_gcm::aead::Aead;
-use std::fs;
+use aes_gcm::KeyInit;
+use aes_gcm::{Aes256Gcm, Key, Nonce};
 use flate2::write::GzEncoder;
 use flate2::Compression;
+use std::fs;
 use std::io::Write;
-use crate::utils::toolbox::get_locker_dir;
 
 pub fn encrypt(secret: &str, name: &str) {
     let locker_dir = get_locker_dir();
@@ -18,10 +18,14 @@ pub fn encrypt(secret: &str, name: &str) {
     let nonce = Nonce::from_slice(&random_bytes);
 
     let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
-    encoder.write_all(secret.as_bytes()).expect("Error during data compression");
+    encoder
+        .write_all(secret.as_bytes())
+        .expect("Error during data compression");
     let compressed_data = encoder.finish().expect("Error when finalizing compression");
 
-    let ciphertext = cipher.encrypt(&nonce, compressed_data.as_ref()).expect("Error during encryption");
+    let ciphertext = cipher
+        .encrypt(nonce, compressed_data.as_ref())
+        .expect("Error during encryption");
 
     let output_path = locker_dir.join(format!("{}.slock", name));
     let mut output_data = Vec::new();

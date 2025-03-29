@@ -1,11 +1,10 @@
-
-use aes_gcm::{Aes256Gcm, Key, Nonce};
+use crate::utils::toolbox::get_locker_dir;
 use aes_gcm::aead::Aead;
 use aes_gcm::KeyInit;
-use std::fs;
+use aes_gcm::{Aes256Gcm, Key, Nonce};
 use flate2::read::GzDecoder;
+use std::fs;
 use std::io::Read;
-use crate::utils::toolbox::get_locker_dir;
 
 pub fn decrypt(name: &str) -> String {
     let locker_dir = get_locker_dir();

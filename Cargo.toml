@@ -4,6 +4,12 @@ version = "0.1.0"
 authors = ["William"]
 edition = "2021"
 license = "MIT"
+description = "A smart locker CLI tool"
+repository = "https://github.com/WillIsback/smart-locker"
+homepage = "https://github.com/WillIsback/smart-locker"
+documentation = "https://docs.rs/smart-locker"
+keywords = ["locker", "cli", "rust"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 aes-gcm = "0.10"       # Chiffrement AES-GCM

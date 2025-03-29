@@ -1,19 +1,12 @@
 // Import necessary modules
-use std::fs;
-use std::io::Read;
 use clap::{Arg, Command};
 use colored::*; // For colored output
 use smart_locker::commands::{
-    decrypt::decrypt,
-    encrypt::encrypt,
-    list::list_secrets,
-    remove::remove_secret,
+    decrypt::decrypt, encrypt::encrypt, list::list_secrets, remove::remove_secret,
 };
-use smart_locker::utils::toolbox::{
-    derive_key_from_passphrase,
-    init_locker,
-    get_locker_dir,
-};
+use smart_locker::utils::toolbox::{derive_key_from_passphrase, get_locker_dir, init_locker};
+use std::fs;
+use std::io::Read;
 fn main() {
     // Display the logo only for general help
     if std::env::args().any(|arg| arg == "--help" || arg == "-h") {
@@ -23,11 +16,11 @@ fn main() {
     let locker_dir = get_locker_dir();
     // CLI command management
     let matches = Command::new("SmartLocker")
-    .version("1.0")
-    .author("William")
-    .about("🔐 A CLI tool to encrypt and manage sensitive secrets")
-    .long_about(
-        "SmartLocker is a secret management tool that allows you to securely encrypt, \
+        .version("1.0")
+        .author("William")
+        .about("🔐 A CLI tool to encrypt and manage sensitive secrets")
+        .long_about(
+            "SmartLocker is a secret management tool that allows you to securely encrypt, \
         decrypt, list, and delete sensitive secrets.\n\n\
         Available commands:\n\
         - init: Initializes the vault and generates a symmetric key.\n\
@@ -42,102 +35,112 @@ fn main() {
         - list: Lists all available secrets.\n\
         - remove: Deletes a secret.\n\n\
         Use --help or -h after a command for more details.",
-    )
-    .subcommand(
-        Command::new("init")
-            .about("Initializes the vault and generates a symmetric key")
-            .long_about(
-                "Initializes the vault by generating a symmetric key.\n\n\
+        )
+        .subcommand(
+            Command::new("init")
+                .about("Initializes the vault and generates a symmetric key")
+                .long_about(
+                    "Initializes the vault by generating a symmetric key.\n\n\
                 EXAMPLES:\n\
                 - Generate a random key:\n\
                   smart-locker init\n\
                 - Generate a key from a passphrase:\n\
                   smart-locker init --passphrase \"my passphrase\"",
-            )
-            .arg(
-                Arg::new("passphrase")
-                    .short('p')
-                    .long("passphrase")
-                    .num_args(1)
-                    .required(false)
-                    .help("Passphrase to generate the symmetric key"),
-            ),
-    )
-    .subcommand(
-        Command::new("encrypt")
-            .about("Encrypts a secret")
-            .long_about(
-                "Encrypts a secret and saves it in the vault.\n\n\
+                )
+                .arg(
+                    Arg::new("passphrase")
+                        .short('p')
+                        .long("passphrase")
+                        .num_args(1)
+                        .required(false)
+                        .help("Passphrase to generate the symmetric key"),
+                ),
+        )
+        .subcommand(
+            Command::new("encrypt")
+                .about("Encrypts a secret")
+                .long_about(
+                    "Encrypts a secret and saves it in the vault.\n\n\
                 EXAMPLES:\n\
                 - Encrypt a secret with a value:\n\
                   smart-locker encrypt -n my_secret -v \"my value\"\n\
                 - Encrypt a secret by reading the value from stdin:\n\
                   echo \"my value\" | smart-locker encrypt -n my_secret",
-            )
-            .arg(Arg::new("name")
-                .short('n')
-                .long("name")
-                .num_args(1)
-                .required(true)
-                .help("Name of the secret"))
-            .arg(Arg::new("value")
-                .short('v')
-                .long("value")
-                .num_args(1)
-                .required(false)
-                .help("Value of the secret to encrypt")),
-    )
-    .subcommand(
-        Command::new("decrypt")
-            .about("Decrypts a secret")
-            .long_about(
-                "Decrypts a secret and displays its value or copies it to the clipboard.\n\n\
+                )
+                .arg(
+                    Arg::new("name")
+                        .short('n')
+                        .long("name")
+                        .num_args(1)
+                        .required(true)
+                        .help("Name of the secret"),
+                )
+                .arg(
+                    Arg::new("value")
+                        .short('v')
+                        .long("value")
+                        .num_args(1)
+                        .required(false)
+                        .help("Value of the secret to encrypt"),
+                ),
+        )
+        .subcommand(
+            Command::new("decrypt")
+                .about("Decrypts a secret")
+                .long_about(
+                    "Decrypts a secret and displays its value or copies it to the clipboard.\n\n\
                 EXAMPLES:\n\
                 - Decrypt a secret and display it:\n\
                   smart-locker decrypt -n my_secret\n\
                 - Decrypt a secret and copy it to the clipboard:\n\
                   smart-locker decrypt -n my_secret --clipboard",
-            )
-            .arg(Arg::new("name")
-                .short('n')
-                .long("name")
-                .num_args(1)
-                .required(true)
-                .help("Name of the secret to decrypt"))
-            .arg(Arg::new("clipboard")
-                .short('c')
-                .long("clipboard")
-                .action(clap::ArgAction::SetTrue)
-                .required(false)
-                .help("Copies the decrypted secret to the clipboard")),
-    )
-    .subcommand(
-        Command::new("list")
-            .about("Lists all available secrets")
-            .long_about(
-                "Displays the list of available secrets in the vault.\n\n\
+                )
+                .arg(
+                    Arg::new("name")
+                        .short('n')
+                        .long("name")
+                        .num_args(1)
+                        .required(true)
+                        .help("Name of the secret to decrypt"),
+                )
+                .arg(
+                    Arg::new("clipboard")
+                        .short('c')
+                        .long("clipboard")
+                        .action(clap::ArgAction::SetTrue)
+                        .required(false)
+                        .help("Copies the decrypted secret to the clipboard"),
+                ),
+        )
+        .subcommand(
+            Command::new("list")
+                .about("Lists all available secrets")
+                .long_about(
+                    "Displays the list of available secrets in the vault.\n\n\
                 EXAMPLES:\n\
                 - List all secrets:\n\
                   smart-locker list",
-            ),
-    )
-    .subcommand(
-        Command::new("remove")
-            .about("Deletes a secret")
-            .long_about(
-                "Deletes a secret from the vault.\n\n\
+                ),
+        )
+        .subcommand(
+            Command::new("remove")
+                .about("Deletes a secret")
+                .long_about(
+                    "Deletes a secret from the vault.\n\n\
                 EXAMPLES:\n\
                 - Delete a secret:\n\
                   smart-locker remove -n my_secret",
-            )
-            .arg(Arg::new("name")
-                .short('n')
-                .long("name")
-                .num_args(1)
-                .required(true)
-                .help("Name of the secret to delete")),
-    )
-    .get_matches();
+                )
+                .arg(
+                    Arg::new("name")
+                        .short('n')
+                        .long("name")
+                        .num_args(1)
+                        .required(true)
+                        .help("Name of the secret to delete"),
+                ),
+        )
+        .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("init") {
         display_logo(); // Display the logo only for the init command
@@ -147,7 +150,14 @@ fn main() {
 
             let key_path = locker_dir.join("locker.key");
             fs::write(&key_path, key).expect("Error writing the key");
-            println!("{}", format!("✅ Key generated from the passphrase and saved: {:?}", key_path).green());
+            println!(
+                "{}",
+                format!(
+                    "✅ Key generated from the passphrase and saved: {:?}",
+                    key_path
+                )
+                .green()
+            );
         } else {
             init_locker(); // Call the existing function to generate a random key
             println!("{}", "✅ Vault initialized successfully!".green());
@@ -165,7 +175,10 @@ fn main() {
             input.trim().to_string()
         };
         encrypt(&value, name);
-        println!("{}", format!("✅ Secret '{}' encrypted successfully!", name).green());
+        println!(
+            "{}",
+            format!("✅ Secret '{}' encrypted successfully!", name).green()
+        );
     } else if let Some(matches) = matches.subcommand_matches("decrypt") {
         let name = matches.get_one::<String>("name").unwrap();
         let decrypted_value = decrypt(name);
@@ -196,7 +209,7 @@ fn main() {
             }
         } else {
             // Print the decrypted value to the terminal
-            println!("{}", format!("🔓 Decrypted secret: {}", decrypted_value).green());
+            println!("{}", decrypted_value.green());
         }
     } else if matches.subcommand_matches("list").is_some() {
         let secrets = list_secrets();
@@ -211,10 +224,18 @@ fn main() {
     } else if let Some(matches) = matches.subcommand_matches("remove") {
         let name = matches.get_one::<String>("name").unwrap();
         remove_secret(name);
-        println!("{}", format!("✅ Secret '{}' deleted successfully!", name).green());
+        println!(
+            "{}",
+            format!("✅ Secret '{}' deleted successfully!", name).green()
+        );
     }
 }
 
 fn display_logo() {
-    println!("{}", "🦀🔐 SmartLocker - Secure your secrets with Rust!".bold().green());
+    println!(
+        "{}",
+        "🦀🔐 SmartLocker - Secure your secrets with Rust!"
+            .bold()
+            .green()
+    );
 }

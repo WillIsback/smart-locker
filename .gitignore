@@ -40,3 +40,6 @@ release-*/
 # already existing elements were commented out
 
 #/target
+.secrets
+.env
+local_artifacts/
