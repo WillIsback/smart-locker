@@ -223,6 +223,41 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
+      # After running cargo release
+      - name: 📦 Create GitHub Release
+        uses: actions/create-release@v1.1.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }} # Use the tag created by cargo-release
+          release_name: "Release ${{ github.ref_name }}"
+          draft: false
+          prerelease: false
+          body: |
+            This release includes:
+            - Precompiled binaries
+            - `.deb` and `.rpm` packages
+
+      - name: 📤 Upload Release Assets
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: target/debian/*.deb
+          asset_name: smartlocker.deb
+          asset_content_type: application/vnd.debian.binary-package
+
+      - name: 📤 Upload RPM Asset
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: target/generate-rpm/*.rpm
+          asset_name: smartlocker.rpm
+          asset_content_type: application/x-rpm
+
       # - name: 🔑 Generate checksums and signatures
       #   run: |
       #     sha256sum dist/* > checksums.txt
