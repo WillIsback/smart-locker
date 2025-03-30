@@ -153,12 +153,10 @@ jobs:
           
           # Déterminer le type de version attendu en fonction de la branche
           VERSION_TYPE=""
-          if [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+          if [ "${{ github.ref }}" = "refs/heads/dev" ]; then
             VERSION_TYPE="rc"
-          elif [ "${{ github.ref }}" == "refs/heads/preprod" ]; then
+          elif [ "${{ github.ref }}" = "refs/heads/preprod" ]; then
             VERSION_TYPE="beta"
-          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            VERSION_TYPE="release"
           else
             echo "❌ Branche non supportée pour la gestion des versions."
             exit 1
@@ -167,11 +165,7 @@ jobs:
           echo "🔍 Recherche du dernier tag correspondant au type de version : $VERSION_TYPE..."
       
           # Construire le motif de recherche pour les tags
-          if [ "$VERSION_TYPE" == "release" ]; then
-            TAG_PATTERN='^v[0-9]+\.[0-9]+\.[0-9]+$'
-          else
-            TAG_PATTERN="^v[0-9]+\.[0-9]+\.[0-9]+-$VERSION_TYPE\.[0-9]+$"
-          fi
+          TAG_PATTERN="^v[0-9]+\.[0-9]+\.[0-9]+-$VERSION_TYPE\.[0-9]+$"
       
           # Extraire tous les tags correspondant au motif, les trier, et prendre le dernier
           LAST_TAG=$(git tag | grep -E "$TAG_PATTERN" | sort -V | tail -n1)
@@ -201,22 +195,7 @@ jobs:
             git add Cargo.toml Cargo.lock
             git commit -m "chore: sync version with latest $VERSION_TYPE tag ($CURRENT_VERSION_IN_TAG)"
           fi
-  
-      # Handle different versioning levels
-      - name: 🚀 Run cargo release
-        run: |
-          VERSION_LEVEL=""
-          if [ "${{ github.ref }}" == "refs/heads/dev" ]; then
-            VERSION_LEVEL="rc"
-          elif [ "${{ github.ref }}" == "refs/heads/preprod" ]; then
-            VERSION_LEVEL="beta"
-          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            VERSION_LEVEL="release"
-          else
-            echo "❌ Unsupported branch for release."
-            exit 1
-          fi
-    
+
       # Dry-run pour dev
       - name: 🚀 Run cargo release (dry-run for dev)
         if: github.ref == 'refs/heads/dev'
@@ -239,7 +218,7 @@ jobs:
       - name: 🚀 Run cargo release (stable release for main)
         if: github.ref == 'refs/heads/main'
         run: | 
-          cargo release release --execute --no-confirm
+          cargo release patch --execute --no-confirm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
