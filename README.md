@@ -1,42 +1,23 @@
-# 🦀🔐 SmartLocker
+# 🦀🔐 smart-locker
 
 A ultra-lightweight CLI tool written in **Rust** to **encrypt, store, and manage sensitive secrets locally** in a secure and durable way.
 
 ## 🚀 Purpose
 
-SmartLocker solves a real-world problem:
+smart-locker solves a real-world problem:
 
 > In a fullstack project with CI/CD pipelines, **tokens, private keys, passphrases, and API keys** become critical.
 
-Storing them in plain text is dangerous. Base64 encoding is not enough. SmartLocker offers a reliable, simple, and effective solution.
+Storing them in plain text is dangerous. Base64 encoding is not enough. smart-locker offers a reliable, simple, and effective solution.
 
-## 🎯 Key Features
-
-- ✅ Symmetric encryption of secrets (via AES-GCM or similar)
-- ✅ Quick decryption using a passphrase or master key
-- ✅ Secure folder `~/.locker`
-- ✅ Encrypted files with `.slock` or `.aes` extension
-- ✅ User-friendly CLI: `smartlocker encrypt`, `decrypt`, `list`, etc.
-- ✅ Pipe support (e.g. `cat secret.txt | smartlocker encrypt -n my_secret`)
-- ✅ Option: generate key from hashed passphrase (PBKDF2)
-- ✅ Option: copy decrypted secret to clipboard
-- 🔜 Option: Git pre-commit hook to prevent secret leaks
-- 🔜 Option: vault with automatic expiration
-
-## 🗂️ Target Directory Structure
-
-```
-~/.locker/
-├── locker.key         # local symmetric key (or derived from a passphrase)
-├── openai_token.slock
-├── ssh_key_prod.slock
-└── mydb_pass.slock
-```
+---
 
 ## 🛠️ CLI Architecture
 
+At first start with smart-locker init.
+
 ```
-smartlocker <command> [options]
+smart-locker <command> [options]
 
 MAIN COMMANDS:
   encrypt      Encrypt a secret and store it
@@ -46,65 +27,39 @@ MAIN COMMANDS:
   init         Generate the master key (locker.key)
 
 EXAMPLE:
-  smartlocker encrypt -n openai_token -v sk-abc123...
-  smartlocker decrypt -n openai_token
-```
-
-## 📦 Tech Stack
-
-- 🦀 **Rust** (>= 1.74)
-- 📦 `aes-gcm`, `rand`, `clap`, `serde`, `directories`
-- 🔐 Secure encryption based on AES-256 GCM
-
-## 🧱 Future Steps
-
-- [ ] Add vault with auto-expiration
-- [ ] Git pre-commit plugin to block secrets from being committed
-
-## 📈 Why This Project?
-
-Because managing secrets in a fullstack project means:
-
-- Understanding security pitfalls
-- Building reliable and portable tools
-- Learning how to secure DevOps workflows
-
----
-
-## 🧠 System Diagram
+  smart-locker encrypt -n openai_token -v sk-abc123...
+  smart-locker decrypt -n openai_token
 
 ```
-                +---------------------------+
-                |     smartlocker init      |
-                +-------------+-------------+
-                              |
-                         Generates key 🔑
-                              |
-               +--------------v-------------+
-               |     ~/.locker/locker.key   |
-               +--------------+-------------+
-                              |
-          +-------------------+--------------------+
-          |                                        |
-+---------v--------+                    +----------v---------+
-| smartlocker encrypt |                  | smartlocker decrypt |
-+---------+--------+                    +----------+---------+
-          |                                        |
-     CLI input or STDIN                     Read encrypted file
-          |                                        |
-   `.slock` encrypted file         →        Decrypted secret
-```
-
-
+  ADVANCED:
+  ```shell
+  OPENAI_API_KEY=$(echo smart-locker decrypt -n openai_token)
+  ```
+  ```shell
+  echo "This is a test" | smart-locker encrypt -n my_secret
+  ```
+  ```bash
+  smart-locker decrypt -n my_secret --clipboard
+  ```
 ---
 
 ## 🛠️ Installation
 
-SmartLocker is available for **Linux** and **Windows**. You can either build it from source (for Rust users) or download a ready-to-use binary archive.
+smart-locker is available for **Linux** and **Windows**. You can either build it from source (for Rust users), download a ready-to-use binary archive, or install it directly via `cargo`.
 
 ---
 
-### ✅ Recommended: Precompiled Binary
+### ✅ Recommended: Install via Cargo
+
+If you have Rust installed, you can install smart-locker directly from crates.io:
+
+```bash
+cargo install smart-locker
+```
+
+---
+
+### ✅ Precompiled Binary
 
 #### **Windows**
 
@@ -188,155 +143,87 @@ SmartLocker is available for **Linux** and **Windows**. You can either build it 
 
 ---
 
-### 🧪 Quick Test After Install
+## 🎯 Key Features
 
-```bash
-smart-locker init
-smart-locker encrypt -n my_secret -v "This is a test"
-smart-locker decrypt -n my_secret
-```
-
----
-### **🔧 Features and Capabilities of SmartLocker CLI**
-
-The `SmartLocker` CLI provides a robust and user-friendly interface for securely managing sensitive secrets. Below is a detailed breakdown of its features and capabilities:
-
----
-
-### **🔑 Initialization (`init`)**
-- **Purpose:** Initializes the vault by creating a secure folder (`~/.locker`) and generating a symmetric key (`locker.key`).
-- **Options:**
-  - `--passphrase`: Generate the symmetric key from a passphrase using PBKDF2.
-- **Examples:**
-  ```bash
-  # Generate a random symmetric key
-  smart-locker init
-
-  # Generate a symmetric key from a passphrase
-  smart-locker init --passphrase "my_secure_passphrase"
-  ```
+- ✅ Symmetric encryption of secrets (via AES-GCM or similar)
+- ✅ Quick decryption using a passphrase or master key
+- ✅ Secure folder `~/.locker`
+- ✅ Encrypted files with `.slock` or `.aes` extension
+- ✅ User-friendly CLI: `smartlocker encrypt`, `decrypt`, `list`, etc.
+- ✅ Pipe support (e.g. `cat secret.txt | smartlocker encrypt -n my_secret`)
+- ✅ Option: generate key from hashed passphrase (PBKDF2)
+- ✅ Option: copy decrypted secret to clipboard
+- 🔜 Option: Git pre-commit hook to prevent secret leaks
+- 🔜 Option: vault with automatic expiration
 
 ---
 
-### **🔒 Encryption (`encrypt`)**
-- **Purpose:** Encrypts a secret and stores it securely in the vault.
-- **Options:**
-  - `--name (-n)`: Name of the secret (required).
-  - `--value (-v)`: Value of the secret to encrypt (optional). If not provided, the value is read from `stdin`.
-- **Examples:**
-  ```bash
-  # Encrypt a secret with a value
-  smart-locker encrypt -n my_secret -v "This is a test"
+## 🗂️ Target Directory Structure
 
-  # Encrypt a secret by reading the value from stdin
-  echo "This is a test" | smart-locker encrypt -n my_secret
-  ```
-
----
-
-### **🔓 Decryption (`decrypt`)**
-- **Purpose:** Decrypts a secret and either displays it in the terminal or copies it to the clipboard.
-- **Options:**
-  - `--name (-n)`: Name of the secret to decrypt (required).
-  - `--clipboard (-c)`: Copies the decrypted secret to the clipboard instead of displaying it.
-- **Examples:**
-  ```bash
-  # Decrypt a secret and display it in the terminal
-  smart-locker decrypt -n my_secret
-
-  # Decrypt a secret and copy it to the clipboard
-  smart-locker decrypt -n my_secret --clipboard
-  ```
-
----
-
-### **📜 Listing Secrets (`list`)**
-- **Purpose:** Lists all the secrets stored in the vault.
-- **Examples:**
-  ```bash
-  # List all secrets
-  smart-locker list
-  ```
-
----
-
-### **🗑️ Removing Secrets (`remove`)**
-- **Purpose:** Deletes a secret from the vault.
-- **Options:**
-  - `--name (-n)`: Name of the secret to delete (required).
-- **Examples:**
-  ```bash
-  # Remove a secret
-  smart-locker remove -n my_secret
-  ```
-
----
-
-### **📋 Clipboard Integration**
-- **Purpose:** Allows seamless copying of decrypted secrets to the clipboard for quick use.
-- **Supported Platforms:**
-  - **Linux:** Uses `copypasta` for clipboard management.
-  - **Windows (WSL):** Uses `clip.exe` for clipboard integration.
-- **Examples:**
-  ```bash
-  # Decrypt a secret and copy it to the clipboard
-  smart-locker decrypt -n my_secret --clipboard
-  ```
-
----
-
-### **📂 Vault Structure**
-The vault is stored in the `~/.locker` directory and contains:
-- `locker.key`: The symmetric key used for encryption and decryption.
-- `.slock` files: Encrypted secrets, named after the secret's name.
-
-Example structure:
 ```
 ~/.locker/
-├── locker.key         # Symmetric key
-├── my_secret.slock    # Encrypted secret
-├── api_key.slock      # Encrypted secret
-└── db_password.slock  # Encrypted secret
+├── locker.key         # local symmetric key (or derived from a passphrase)
+├── openai_token.slock
+├── ssh_key_prod.slock
+└── mydb_pass.slock
 ```
 
 ---
 
-### **🛠️ Additional Features**
-- **Pipe Support:** Allows secrets to be passed via `stdin` for encryption.
-  ```bash
-  echo "my_secret_value" | smart-locker encrypt -n my_secret
-  ```
-- **Cross-Platform Compatibility:** Works seamlessly on Linux and Windows.
-- **Customizable Key Generation:** Use a passphrase to derive the symmetric key for added security.
+## 📦 Tech Stack
+
+- 🦀 **Rust** (>= 1.74)
+- 📦 `aes-gcm`, `rand`, `clap`, `serde`, `directories`
+- 🔐 Secure encryption based on AES-256 GCM
+
 ---
 
-### **🚀 Example Workflow**
-```bash
-# Step 1: Initialize the vault
-smart-locker init
+## 🧱 Future Steps
 
-# Step 2: Encrypt a secret
-smart-locker encrypt -n my_secret -v "This is a test"
+- [ ] Add vault with auto-expiration
+- [ ] Git pre-commit plugin to block secrets from being committed
 
-# Step 3: List all secrets
-smart-locker list
+---
 
-# Step 4: Decrypt a secret and display it
-smart-locker decrypt -n my_secret
+## 📈 Why This Project?
 
-# Step 5: Decrypt a secret and copy it to the clipboard
-smart-locker decrypt -n my_secret --clipboard
+Because managing secrets in a fullstack project means:
 
-# Step 6: Remove a secret
-smart-locker remove -n my_secret
+- Understanding security pitfalls
+- Building reliable and portable tools
+- Learning how to secure DevOps workflows
+
+---
+
+## 🧠 System Diagram
+
+```
+                +---------------------------+
+                |     smartlocker init      |
+                +-------------+-------------+
+                              |
+                         Generates key 🔑
+                              |
+               +--------------v-------------+
+               |     ~/.locker/locker.key   |
+               +--------------+-------------+
+                              |
+          +-------------------+--------------------+
+          |                                        |
++---------v--------+                    +----------v---------+
+| smartlocker encrypt |                  | smartlocker decrypt |
++---------+--------+                    +----------+---------+
+          |                                        |
+     CLI input or STDIN                     Read encrypted file
+          |                                        |
+   `.slock` encrypted file         →        Decrypted secret
 ```
 
 ---
 
 > 📝 **Note:** If you encounter any issues during installation, please check the [Issues section](https://github.com/WillIsback/smart-locker/issues) or open a new ticket.
 
-> 🦀🔐 *SmartLocker is a personal project to explore Rust deeply while building a useful security tool for everyday DevOps workflows.
-
+> 🦀🔐 *smart-locker* is a personal project to explore Rust deeply while building a useful security tool for everyday DevOps workflows.
 
 ## 📝 License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
