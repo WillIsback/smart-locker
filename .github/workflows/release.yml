@@ -268,8 +268,33 @@ jobs:
           asset_name: smartlocker.rpm
           asset_content_type: application/x-rpm
 
+      - name: 📥 Download build artifacts
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
 
-
+      - name: 📤 Upload Linux Binary
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: smartlocker_linux.tar.gz
+          asset_name: smartlocker_linux.tar.gz
+          asset_content_type: application/gzip
+        
+      - name: 📤 Upload Windows Binary
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: smartlocker_windows.zip
+          asset_name: smartlocker_windows.zip
+          asset_content_type: application/zip
 
 
       # - name: 🔑 Generate checksums and signatures
