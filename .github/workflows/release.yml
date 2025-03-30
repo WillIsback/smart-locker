@@ -13,23 +13,17 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     container:
-      image: rust:latest
+      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
       options: --user root
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v3
 
-
-      - name: 🛠️ Install Rust tools and targets
-        run: |
-          rustup component add clippy rustfmt
-          cargo install git-cliff
-          cargo install cargo-release  
   # 1. Linting
   lint:
     runs-on: ubuntu-latest
     container:
-      image: rust:latest
+      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
       options: --user root
     needs: [setup]
     steps:
@@ -44,7 +38,7 @@ jobs:
   format:
     runs-on: ubuntu-latest
     container:
-      image: rust:latest
+      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
       options: --user root
     needs: [setup]
     steps:
@@ -59,33 +53,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: rust:latest
+      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
       options: --user root
     needs: [setup]
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v3
-
-      - name: 🧰 Install system dependencies
-        run: |
-          apt-get update -qq > /dev/null
-          apt-get install -y -qq \
-            build-essential \
-            gcc-mingw-w64 \
-            curl \
-            pkg-config \
-            zip \
-            git \
-            nodejs \
-            libssl-dev \
-            > /dev/null 2>&1 || {
-              echo "❌ Failed to install packages"
-              exit 1
-            }
-              
-      - name: 🛠️ Install Rust tools and targets
-        run: |
-          rustup target add x86_64-pc-windows-gnu
 
       - name: 🛠️ Build for Linux
         run: cargo build --release
@@ -110,13 +83,11 @@ jobs:
             smartlocker_linux.tar.gz
             smartlocker_windows.zip
 
-
-
   # 4. Tests unitaires
   test:
     runs-on: ubuntu-latest
     container:
-      image: rust:latest
+      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
       options: --user root
     needs: [setup, lint, format, build]
     steps:
@@ -127,13 +98,12 @@ jobs:
           cargo run init
           cargo test --release --features disable_clipboard_tests -- --nocapture
 
-
   # 5 Documentation 
   docs:
     name: docs-online
     runs-on: ubuntu-latest
     container:
-      image: rust:latest
+      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
       options: --user root
     steps:
       - name: 📥 Checkout repository
@@ -146,12 +116,11 @@ jobs:
           name: documentation
           path: target/doc
       
-
   # 6. Release
   release:
     runs-on: ubuntu-latest
     container:
-      image: rust:latest
+      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
       options: --user root
     needs: [test, docs]
     env:
@@ -194,3 +163,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: 🔑 Generate checksums and signatures
+        run: |
+          sha256sum dist/* > checksums.txt
+          gpg --detach-sign --armor checksums.txt
+          
+      - name: 📤 Upload checksums and signatures
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksums
+          path: |
+            checksums.txt
+            checksums.txt.asc
