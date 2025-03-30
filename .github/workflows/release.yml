@@ -225,6 +225,8 @@ jobs:
 
       # After running cargo release
       - name: 📦 Create GitHub Release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
+        id: create_release # Assign an ID to this step
         uses: actions/create-release@v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -239,21 +241,23 @@ jobs:
             - `.deb` and `.rpm` packages
 
       - name: 📤 Upload Release Assets
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # Reference the output of the create-release step
           asset_path: target/debian/*.deb
           asset_name: smartlocker.deb
           asset_content_type: application/vnd.debian.binary-package
 
       - name: 📤 Upload RPM Asset
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # Reference the output of the create-release step
           asset_path: target/generate-rpm/*.rpm
           asset_name: smartlocker.rpm
           asset_content_type: application/x-rpm
