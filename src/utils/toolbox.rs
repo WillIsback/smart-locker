@@ -36,7 +36,7 @@ pub fn generate_key() -> Vec<u8> {
 /// Generates a symmetric key from a passphrase and salt.
 pub fn derive_key_from_passphrase(passphrase: &str, salt: &[u8]) -> Vec<u8> {
     let locker_dir = get_locker_dir();
-    
+
     // Check if the locker directory exists
     if !locker_dir.exists() {
         fs::create_dir_all(&locker_dir).expect("Error creating folder ~/.locker");
