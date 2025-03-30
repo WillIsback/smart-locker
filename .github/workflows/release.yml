@@ -145,6 +145,9 @@ jobs:
           cargo deb --fast
           cargo generate-rpm
 
+      - name: 🧮 Préparer version pré-release
+        run: ./ci/cargo_release_version_cleaner.sh
+        
       # Dry-run pour dev
       - name: 🚀 Run cargo release (dry-run for dev)
         if: github.ref == 'refs/heads/dev'
