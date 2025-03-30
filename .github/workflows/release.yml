@@ -145,47 +145,83 @@ jobs:
           cargo deb --fast
           cargo generate-rpm
 
+      # Check and update version to avoid duplicates error
       - name: 🧮 Préparer version pré-release
         run: |
           echo "🔍 Récupération des tags distants..."
           git fetch --tags
           
-          echo "🔍 Recherche du dernier tag rc..."
-
-          # Extraire tous les tags rc, les trier, et prendre le dernier
-          LAST_RC_TAG=$(git tag | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$' | sort -V | tail -n1)
-
-          if [ -z "$LAST_RC_TAG" ]; then
-            echo "📭 Aucun tag rc trouvé. Pas de nettoyage nécessaire."
+          # Déterminer le type de version attendu en fonction de la branche
+          VERSION_TYPE=""
+          if [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+            VERSION_TYPE="rc"
+          elif [ "${{ github.ref }}" == "refs/heads/preprod" ]; then
+            VERSION_TYPE="beta"
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            VERSION_TYPE="release"
+          else
+            echo "❌ Branche non supportée pour la gestion des versions."
+            exit 1
+          fi
+      
+          echo "🔍 Recherche du dernier tag correspondant au type de version : $VERSION_TYPE..."
+      
+          # Construire le motif de recherche pour les tags
+          if [ "$VERSION_TYPE" == "release" ]; then
+            TAG_PATTERN='^v[0-9]+\.[0-9]+\.[0-9]+$'
+          else
+            TAG_PATTERN="^v[0-9]+\.[0-9]+\.[0-9]+-$VERSION_TYPE\.[0-9]+$"
+          fi
+      
+          # Extraire tous les tags correspondant au motif, les trier, et prendre le dernier
+          LAST_TAG=$(git tag | grep -E "$TAG_PATTERN" | sort -V | tail -n1)
+      
+          if [ -z "$LAST_TAG" ]; then
+            echo "📭 Aucun tag correspondant au type $VERSION_TYPE trouvé. Pas de nettoyage nécessaire."
             exit 0
           fi
-
+      
           # Enlever le préfixe "v"
-          CURRENT_VERSION_IN_TAG=$(echo "$LAST_RC_TAG" | sed 's/^v//')
-
+          CURRENT_VERSION_IN_TAG=$(echo "$LAST_TAG" | sed 's/^v//')
+      
           # Lire la version actuelle dans Cargo.toml
           CURRENT_VERSION_IN_CARGO=$(grep '^version = ' Cargo.toml | cut -d'"' -f2)
-
+      
           echo "🔍 Version actuelle de Cargo.toml : $CURRENT_VERSION_IN_CARGO"
           echo "🔍 Dernier tag trouvé : $CURRENT_VERSION_IN_TAG"
-
+      
           # Comparer
           if [ "$CURRENT_VERSION_IN_CARGO" = "$CURRENT_VERSION_IN_TAG" ]; then
-            echo "✅ La version dans Cargo.toml correspond au dernier tag rc. Pas besoin de modifier."
+            echo "✅ La version dans Cargo.toml correspond au dernier tag $VERSION_TYPE. Pas besoin de modifier."
             exit 0
           else
             echo "✏️ Mise à jour de Cargo.toml vers $CURRENT_VERSION_IN_TAG pour éviter doublons."
             cargo set-version "$CURRENT_VERSION_IN_TAG"
-
+      
             git add Cargo.toml Cargo.lock
-            git commit -m "chore: sync version with latest rc tag ($CURRENT_VERSION_IN_TAG)"
+            git commit -m "chore: sync version with latest $VERSION_TYPE tag ($CURRENT_VERSION_IN_TAG)"
           fi
-        
+  
+      # Handle different versioning levels
+      - name: 🚀 Run cargo release
+        run: |
+          VERSION_LEVEL=""
+          if [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+            VERSION_LEVEL="rc"
+          elif [ "${{ github.ref }}" == "refs/heads/preprod" ]; then
+            VERSION_LEVEL="beta"
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            VERSION_LEVEL="release"
+          else
+            echo "❌ Unsupported branch for release."
+            exit 1
+          fi
+    
       # Dry-run pour dev
       - name: 🚀 Run cargo release (dry-run for dev)
         if: github.ref == 'refs/heads/dev'
         run: |
-          cargo release rc --no-tag --no-push --no-publish --no-confirm
+          cargo release rc --execute --no-confirm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
@@ -194,7 +230,7 @@ jobs:
       - name: 🚀 Run cargo release (pre-version for preprod)
         if: github.ref == 'refs/heads/preprod'
         run: |
-          cargo release rc --execute --no-confirm
+          cargo release beta --execute --no-confirm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
@@ -203,7 +239,7 @@ jobs:
       - name: 🚀 Run cargo release (stable release for main)
         if: github.ref == 'refs/heads/main'
         run: | 
-          cargo release patch --execute --no-confirm
+          cargo release release --execute --no-confirm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
