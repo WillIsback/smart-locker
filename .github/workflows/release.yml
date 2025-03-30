@@ -23,9 +23,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/willisback/smart-locker-ci:latest
-      credentials:
-        username: willisback
-        password: ${{  secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
       options: --user root
     needs: [setup]
     steps:
@@ -41,9 +38,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/willisback/smart-locker-ci:latest
-      credentials:
-        username: willisback
-        password: ${{  secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
       options: --user root
     needs: [setup]
     steps:
@@ -59,9 +53,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/willisback/smart-locker-ci:latest
-      credentials:
-        username: willisback
-        password: ${{  secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
       options: --user root
     needs: [setup]
     steps:
@@ -96,9 +87,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/willisback/smart-locker-ci:latest
-      credentials:
-        username: willisback
-        password: ${{  secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
       options: --user root
     needs: [setup, lint, format, build]
     steps:
@@ -115,9 +103,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/willisback/smart-locker-ci:latest
-      credentials:
-        username: willisback
-        password: ${{  secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
       options: --user root
     steps:
       - name: 📥 Checkout repository
@@ -135,9 +120,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/willisback/smart-locker-ci:latest
-      credentials:
-        username: willisback
-        password: ${{  secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
       options: --user root
     needs: [test, docs]
     env:
