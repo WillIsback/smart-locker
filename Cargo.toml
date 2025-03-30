@@ -11,6 +11,38 @@ documentation = "https://docs.rs/smart-locker"
 keywords = ["locker", "cli", "rust"]
 categories = ["command-line-utilities"]
 
+[package.metadata.deb]
+maintainer = "William <william.derue@gmail.com>"
+copyright = "2025, William <william.derue@gmail.com>"
+license-file = ["LICENSE", "4"]
+extended-description = """\
+Smart Locker is a command-line tool written in Rust for managing \
+secure lockers. It provides encryption, secure storage, and \
+easy-to-use CLI commands."""
+depends = "$auto"
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/smart-locker", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/smart-locker/README", "644"],
+    ["LICENSE", "usr/share/doc/smart-locker/LICENSE", "644"],
+]
+
+[package.metadata.rpm]
+maintainer = "William <william.derue@gmail.com>"
+copyright = "2025, William <william.derue@gmail.com>"
+license-file = ["LICENSE", "4"]
+description = """\
+Smart Locker is a command-line tool written in Rust for managing \
+secure lockers. It provides encryption, secure storage, and \
+easy-to-use CLI commands."""
+requires = ["openssl", "glibc"]
+assets = [
+    { source = "target/release/smart-locker", dest = "/usr/bin/smart-locker", mode = "755"},
+    { source = "README.md", dest = "/usr/share/doc/smart-locker/README", mode = "644"},
+    { source = "LICENSE", dest = "/usr/share/doc/smart-locker/LICENSE", mode = "644"},
+]
+
 [dependencies]
 aes-gcm = "0.10"       # Chiffrement AES-GCM
 rand = "0.9"           # Génération de nombres aléatoires

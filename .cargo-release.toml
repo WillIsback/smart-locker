@@ -14,6 +14,11 @@ token = "${CARGO_REGISTRY_TOKEN}"
 [github]
 release = true
 release-draft = false
-upload = ["smartlocker_linux.tar.gz", "smartlocker_windows.zip"]
+upload = [
+    "smartlocker_linux.tar.gz",
+    "smartlocker_windows.zip",
+    "target/debian/*.deb",
+    "target/generate-rpm/*.rpm"
+]
 changelog = true
 changelog-path = "CHANGELOG.md"
