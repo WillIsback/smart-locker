@@ -13,7 +13,7 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
+      image: ghcr.io/willisback/smart-locker-ci:latest
       options: --user root
     steps:
       - name: 📥 Checkout repository
@@ -23,7 +23,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
+      image: ghcr.io/willisback/smart-locker-ci:latest
       options: --user root
     needs: [setup]
     steps:
@@ -38,7 +38,7 @@ jobs:
   format:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
+      image: ghcr.io/willisback/smart-locker-ci:latest
       options: --user root
     needs: [setup]
     steps:
@@ -53,7 +53,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
+      image: ghcr.io/willisback/smart-locker-ci:latest
       options: --user root
     needs: [setup]
     steps:
@@ -87,7 +87,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
+      image: ghcr.io/willisback/smart-locker-ci:latest
       options: --user root
     needs: [setup, lint, format, build]
     steps:
@@ -103,7 +103,7 @@ jobs:
     name: docs-online
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
+      image: ghcr.io/willisback/smart-locker-ci:latest
       options: --user root
     steps:
       - name: 📥 Checkout repository
@@ -120,7 +120,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/smart-locker-ci:latest
+      image: ghcr.io/willisback/smart-locker-ci:latest
       options: --user root
     needs: [test, docs]
     env:
