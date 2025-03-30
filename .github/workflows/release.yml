@@ -149,7 +149,7 @@ jobs:
       - name: 🚀 Run cargo release (dry-run for dev)
         if: github.ref == 'refs/heads/dev'
         run: |
-          cargo release rc --no-confirm
+          cargo release rc --no-tag --no-push --no-publish --no-confirm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
