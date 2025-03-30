@@ -28,7 +28,7 @@ assets = [
     ["LICENSE", "usr/share/doc/smart-locker/LICENSE", "644"],
 ]
 
-[package.metadata.rpm]
+[package.metadata.generate-rpm]
 maintainer = "William <william.derue@gmail.com>"
 copyright = "2025, William <william.derue@gmail.com>"
 license-file = ["LICENSE", "4"]
@@ -36,7 +36,6 @@ description = """\
 Smart Locker is a command-line tool written in Rust for managing \
 secure lockers. It provides encryption, secure storage, and \
 easy-to-use CLI commands."""
-requires = ["openssl", "glibc"]
 assets = [
     { source = "target/release/smart-locker", dest = "/usr/bin/smart-locker", mode = "755"},
     { source = "README.md", dest = "/usr/share/doc/smart-locker/README", mode = "644"},
