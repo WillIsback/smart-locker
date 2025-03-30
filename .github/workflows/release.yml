@@ -157,6 +157,9 @@ jobs:
             VERSION_TYPE="rc"
           elif [ "${{ github.ref }}" = "refs/heads/preprod" ]; then
             VERSION_TYPE="beta"
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "✅ Branche principale détectée, pas de version à gérer."
+            exit 0
           else
             echo "❌ Branche non supportée pour la gestion des versions."
             exit 1
