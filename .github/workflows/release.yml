@@ -151,57 +151,39 @@ jobs:
           echo "🔍 Récupération des tags distants..."
           git fetch --tags
           
-          # Déterminer le type de version attendu en fonction de la branche
-          VERSION_TYPE=""
-          if [ "${{ github.ref }}" = "refs/heads/dev" ]; then
-            VERSION_TYPE="rc"
-          elif [ "${{ github.ref }}" = "refs/heads/preprod" ]; then
-            VERSION_TYPE="rc"
-          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "✅ Branche principale détectée, pas de version à gérer."
-            exit 0
-          else
-            echo "❌ Branche non supportée pour la gestion des versions."
-            exit 1
-          fi
-      
-          echo "🔍 Recherche du dernier tag correspondant au type de version : $VERSION_TYPE..."
-      
-          # Construire le motif de recherche pour les tags
-          TAG_PATTERN="^v[0-9]+\.[0-9]+\.[0-9]+-$VERSION_TYPE\.[0-9]+$"
-      
-          # Extraire tous les tags correspondant au motif, les trier, et prendre le dernier
-          LAST_TAG=$(git tag | grep -E "$TAG_PATTERN" | sort -V | tail -n1)
-      
-          if [ -z "$LAST_TAG" ]; then
-            echo "📭 Aucun tag correspondant au type $VERSION_TYPE trouvé. Pas de nettoyage nécessaire."
-            exit 0
-          fi
-      
-          # Enlever le préfixe "v"
-          CURRENT_VERSION_IN_TAG=$(echo "$LAST_TAG" | sed 's/^v//')
-      
           # Lire la version actuelle dans Cargo.toml
           CURRENT_VERSION_IN_CARGO=$(grep '^version = ' Cargo.toml | cut -d'"' -f2)
-      
-          echo "🔍 Version actuelle de Cargo.toml : $CURRENT_VERSION_IN_CARGO"
-          echo "🔍 Dernier tag trouvé : $CURRENT_VERSION_IN_TAG"
-      
-          # Comparer
-          if [ "$CURRENT_VERSION_IN_CARGO" = "$CURRENT_VERSION_IN_TAG" ]; then
-            echo "✅ La version dans Cargo.toml correspond au dernier tag $VERSION_TYPE. Pas besoin de modifier."
-            exit 0
-          else
-            echo "✏️ Mise à jour de Cargo.toml vers $CURRENT_VERSION_IN_TAG pour éviter doublons."
-            cargo set-version "$CURRENT_VERSION_IN_TAG"
-      
-            git add Cargo.toml Cargo.lock
-            git commit -m "chore: sync version with latest $VERSION_TYPE tag ($CURRENT_VERSION_IN_TAG)"
-          fi
-          # Export the version as an environment variable
-          echo "VERSION=$CURRENT_VERSION_IN_TAG" >> $GITHUB_ENV
-          echo "🔍 Version mise à jour dans Cargo.toml : ${{ env.VERSION }}"
           
+          # Lire la dernière version taguée
+          LATEST_GIT_TAG=$(git describe --tags --abbrev=0 || echo "0.0.0")
+          
+          # Comparaison pour la branche preprod
+          if [[ "${GITHUB_REF}" == "refs/heads/preprod" ]]; then
+            if [[ "$(printf '%s\n' "$LATEST_GIT_TAG" "$CURRENT_VERSION_IN_CARGO" | sort -V | head -n1)" != "$LATEST_GIT_TAG" ]]; then
+              echo "✅ La version dans Cargo.toml est égale ou supérieure au dernier tag Git."
+            else
+              echo "❌ La version dans Cargo.toml doit être égale ou supérieure au dernier tag Git."
+              exit 1
+            fi
+          fi
+          
+          # Comparaison pour la branche main
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            CURRENT_VERSION_NO_SUFFIX=$(echo "$CURRENT_VERSION_IN_CARGO" | sed 's/-.*//')
+            LATEST_GIT_TAG_NO_SUFFIX=$(echo "$LATEST_GIT_TAG" | sed 's/-.*//')
+            if [[ "$(printf '%s\n' "$LATEST_GIT_TAG_NO_SUFFIX" "$CURRENT_VERSION_NO_SUFFIX" | sort -V | head -n1)" == "$LATEST_GIT_TAG_NO_SUFFIX" && "$CURRENT_VERSION_NO_SUFFIX" != "$LATEST_GIT_TAG_NO_SUFFIX" ]]; then
+              echo "✅ La version dans Cargo.toml est strictement supérieure au dernier tag Git (sans suffixe)."
+            else
+              echo "${CURRENT_VERSION_NO_SUFFIX} vs ${LATEST_GIT_TAG_NO_SUFFIX}"
+              echo "❌ La version dans Cargo.toml doit être strictement supérieure au dernier tag Git (sans suffixe)."
+              exit 1
+            fi
+          fi
+          
+          # Export the version as an environment variable
+          echo "VERSION=$CURRENT_VERSION_IN_CARGO" >> $GITHUB_ENV
+          echo "🔍 Version mise à jour dans Cargo.toml : ${{ env.VERSION }}"
+            
       # Dry-run pour dev
       - name: 🚀 Run cargo release (dry-run for dev)
         if: github.ref == 'refs/heads/dev'
