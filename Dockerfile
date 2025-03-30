@@ -15,4 +15,4 @@ RUN apt-get update -qq && apt-get install -y -qq \
 # Installer les outils Rust
 RUN rustup component add clippy rustfmt \
     && rustup target add x86_64-pc-windows-gnu \
-    && cargo install git-cliff cargo-release cargo-deb cargo-generate-rpm
+    && cargo install git-cliff cargo-release cargo-deb cargo-generate-rpm cargo-edit
