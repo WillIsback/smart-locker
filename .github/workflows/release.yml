@@ -198,7 +198,10 @@ jobs:
             git add Cargo.toml Cargo.lock
             git commit -m "chore: sync version with latest $VERSION_TYPE tag ($CURRENT_VERSION_IN_TAG)"
           fi
-
+          # Export the version as an environment variable
+          echo "VERSION=$CURRENT_VERSION_IN_TAG" >> $GITHUB_ENV
+          echo "🔍 Version mise à jour dans Cargo.toml : ${{ env.VERSION }}"
+          
       # Dry-run pour dev
       - name: 🚀 Run cargo release (dry-run for dev)
         if: github.ref == 'refs/heads/dev'
@@ -234,10 +237,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref_name }} # Use the tag created by cargo-release
-          release_name: "Release ${{ github.ref_name }}"
+          tag_name: "v${{ env.VERSION }}"
+          release_name: "Release v${{ env.VERSION }}"
           draft: false
-          prerelease: false
+          prerelease: ${{ github.ref == 'refs/heads/preprod' }}
           body: |
             This release includes:
             - Precompiled binaries
@@ -264,6 +267,10 @@ jobs:
           asset_path: target/generate-rpm/*.rpm
           asset_name: smartlocker.rpm
           asset_content_type: application/x-rpm
+
+
+
+
 
       # - name: 🔑 Generate checksums and signatures
       #   run: |
