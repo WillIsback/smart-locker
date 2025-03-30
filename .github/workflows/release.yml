@@ -156,7 +156,7 @@ jobs:
           if [ "${{ github.ref }}" = "refs/heads/dev" ]; then
             VERSION_TYPE="rc"
           elif [ "${{ github.ref }}" = "refs/heads/preprod" ]; then
-            VERSION_TYPE="beta"
+            VERSION_TYPE="rc"
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "✅ Branche principale détectée, pas de version à gérer."
             exit 0
@@ -215,7 +215,7 @@ jobs:
       - name: 🚀 Run cargo release (pre-version for preprod)
         if: github.ref == 'refs/heads/preprod'
         run: |
-          cargo release beta --execute --no-confirm
+          cargo release rc --execute --no-confirm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
