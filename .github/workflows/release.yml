@@ -140,6 +140,7 @@ jobs:
       - name: 📦 Build .deb and .rpm packages
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
         run: |
+          cargo build --release
           strip -s target/release/smart-locker
           cargo deb --fast
           cargo generate-rpm
