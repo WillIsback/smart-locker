@@ -146,7 +146,37 @@ jobs:
           cargo generate-rpm
 
       - name: 🧮 Préparer version pré-release
-        run: ./ci/cargo_release_version_cleaner.sh
+        run: |
+          echo "🔍 Recherche du dernier tag rc..."
+
+          # Extraire tous les tags rc, les trier, et prendre le dernier
+          LAST_RC_TAG=$(git tag | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$' | sort -V | tail -n1)
+
+          if [[ -z "$LAST_RC_TAG" ]]; then
+            echo "📭 Aucun tag rc trouvé. Pas de nettoyage nécessaire."
+            exit 0
+          fi
+
+          # Enlever le préfixe "v"
+          CURRENT_VERSION_IN_TAG=$(echo "$LAST_RC_TAG" | sed 's/^v//')
+
+          # Lire la version actuelle dans Cargo.toml
+          CURRENT_VERSION_IN_CARGO=$(grep '^version = ' Cargo.toml | cut -d'"' -f2)
+
+          echo "🔍 Version actuelle de Cargo.toml : $CURRENT_VERSION_IN_CARGO"
+          echo "🔍 Dernier tag trouvé : $CURRENT_VERSION_IN_TAG"
+
+          # Comparer
+          if [[ "$CURRENT_VERSION_IN_CARGO" == "$CURRENT_VERSION_IN_TAG" ]]; then
+            echo "✅ La version dans Cargo.toml correspond au dernier tag rc. Pas besoin de modifier."
+            exit 0
+          else
+            echo "✏️ Mise à jour de Cargo.toml vers $CURRENT_VERSION_IN_TAG pour éviter doublons."
+            cargo set-version "$CURRENT_VERSION_IN_TAG"
+
+            git add Cargo.toml Cargo.lock
+            git commit -m "chore: sync version with latest rc tag ($CURRENT_VERSION_IN_TAG)"
+          fi
         
       # Dry-run pour dev
       - name: 🚀 Run cargo release (dry-run for dev)
