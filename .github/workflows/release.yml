@@ -139,7 +139,6 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
         run: |
           cargo build --release
-          strip -s target/release/smart-locker
           cargo deb --fast
           cargo generate-rpm
 
@@ -226,6 +225,13 @@ jobs:
             - Precompiled binaries
             - `.deb` and `.rpm` packages
 
+      - name: 🔍 Debug .deb and .rpm Files
+        run: |
+          echo "Listing .deb files:"
+          ls -l target/debian/
+          echo "Listing .rpm files:"
+          ls -l target/generate-rpm/
+          
       - name: 📤 Upload Release Assets
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
         uses: actions/upload-release-asset@v1.0.1
@@ -234,9 +240,8 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # Reference the output of the create-release step
           asset_path: target/debian/*.deb
-          asset_name: smartlocker.deb
+          asset_name: smartlocker_${{ env.VERSION }}.deb
           asset_content_type: application/vnd.debian.binary-package
-
       - name: 📤 Upload RPM Asset
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
         uses: actions/upload-release-asset@v1.0.1
@@ -244,8 +249,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # Reference the output of the create-release step
-          asset_path: target/generate-rpm/*.rpm
-          asset_name: smartlocker.rpm
+          asset_path: target/generate-rpm/smart-locker-${{ env.VERSION }}-1.x86_64.rpm
+          asset_name: smartlocker_${{ env.VERSION }}.rpm
           asset_content_type: application/x-rpm
 
       - name: 📥 Download build artifacts
