@@ -6,8 +6,6 @@ on:
       - preprod
       - main
       - dev
-
-
 jobs:
   # Préparation de l'environnement
   setup:
