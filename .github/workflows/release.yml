@@ -134,14 +134,6 @@ jobs:
           git config --global --add safe.directory /__w/smart-locker/smart-locker
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/WillIsback/smart-locker.git
 
-      # Generate .deb and .rpm packages
-      - name: 📦 Build .deb and .rpm packages
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
-        run: |
-          cargo build --release
-          cargo deb --fast
-          cargo generate-rpm
-
       # Check and update version to avoid duplicates error
       - name: 🧮 Préparer version pré-release
         run: |
@@ -151,36 +143,19 @@ jobs:
           # Lire la version actuelle dans Cargo.toml
           CURRENT_VERSION_IN_CARGO=$(grep '^version = ' Cargo.toml | cut -d'"' -f2)
           
-          # Lire la dernière version taguée
-          LATEST_GIT_TAG=$(git describe --tags --abbrev=0 || echo "0.0.0")
-          
-          # Comparaison pour la branche preprod
-          if [[ "${GITHUB_REF}" == "refs/heads/preprod" ]]; then
-            if [[ "$(printf '%s\n' "$LATEST_GIT_TAG" "$CURRENT_VERSION_IN_CARGO" | sort -V | head -n1)" != "$LATEST_GIT_TAG" ]]; then
-              echo "✅ La version dans Cargo.toml est égale ou supérieure au dernier tag Git."
-            else
-              echo "❌ La version dans Cargo.toml doit être égale ou supérieure au dernier tag Git."
-              exit 1
-            fi
-          fi
-          
-          # Comparaison pour la branche main
-          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            CURRENT_VERSION_NO_SUFFIX=$(echo "$CURRENT_VERSION_IN_CARGO" | sed 's/-.*//')
-            LATEST_GIT_TAG_NO_SUFFIX=$(echo "$LATEST_GIT_TAG" | sed 's/-.*//')
-            if [[ "$(printf '%s\n' "$LATEST_GIT_TAG_NO_SUFFIX" "$CURRENT_VERSION_NO_SUFFIX" | sort -V | head -n1)" == "$LATEST_GIT_TAG_NO_SUFFIX" && "$CURRENT_VERSION_NO_SUFFIX" != "$LATEST_GIT_TAG_NO_SUFFIX" ]]; then
-              echo "✅ La version dans Cargo.toml est strictement supérieure au dernier tag Git (sans suffixe)."
-            else
-              echo "${CURRENT_VERSION_NO_SUFFIX} vs ${LATEST_GIT_TAG_NO_SUFFIX}"
-              echo "❌ La version dans Cargo.toml doit être strictement supérieure au dernier tag Git (sans suffixe)."
-              exit 1
-            fi
-          fi
           
           # Export the version as an environment variable
           echo "VERSION=$CURRENT_VERSION_IN_CARGO" >> $GITHUB_ENV
-          echo "🔍 Version mise à jour dans Cargo.toml : ${{ env.VERSION }}"
-            
+          echo "🔍 Version mise à jour dans Cargo.toml : $CURRENT_VERSION_IN_CARGO"
+
+      # Generate .deb and .rpm packages
+      - name: 📦 Build .deb and .rpm packages
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
+        run: |
+          cargo build --release
+          cargo deb --fast --deb-version "${{ env.VERSION }}" 
+          cargo generate-rpm
+
       # Dry-run pour dev
       - name: 🚀 Run cargo release (dry-run for dev)
         if: github.ref == 'refs/heads/dev'
@@ -231,7 +206,7 @@ jobs:
           ls -l target/debian/
           echo "Listing .rpm files:"
           ls -l target/generate-rpm/
-          
+
       - name: 📤 Upload Release Assets
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
         uses: actions/upload-release-asset@v1.0.1
@@ -239,9 +214,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # Reference the output of the create-release step
-          asset_path: target/debian/*.deb
+          asset_path: target/debian/smart-locker_${{ env.VERSION }}_amd64.deb
           asset_name: smartlocker_${{ env.VERSION }}.deb
           asset_content_type: application/vnd.debian.binary-package
+
       - name: 📤 Upload RPM Asset
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
         uses: actions/upload-release-asset@v1.0.1
