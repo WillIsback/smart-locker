@@ -1,10 +1,12 @@
 use crate::utils::toolbox::get_locker_dir;
+use crate::SmartLockerError;
 use std::fs;
 
 /// Returns a list of available secrets in the secure folder.
-pub fn list_secrets() -> Vec<String> {
-    let locker_dir = get_locker_dir();
+pub fn list_secrets() -> Result<Vec<String>, SmartLockerError> {
+    let locker_dir = get_locker_dir()?;
     let mut secrets = Vec::new();
+
     if let Ok(entries) = fs::read_dir(&locker_dir) {
         for entry in entries.flatten() {
             if let Ok(file_type) = entry.file_type() {
@@ -17,5 +19,6 @@ pub fn list_secrets() -> Vec<String> {
             }
         }
     }
-    secrets
+
+    Ok(secrets)
 }

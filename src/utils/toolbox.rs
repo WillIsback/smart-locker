@@ -1,3 +1,4 @@
+use crate::SmartLockerError;
 use directories::UserDirs;
 use ring::pbkdf2;
 use std::env;
@@ -6,11 +7,13 @@ use std::num::NonZeroU32;
 use std::path::PathBuf;
 
 /// Initialise le répertoire `.locker` et génère une clé symétrique si nécessaire.
-pub fn init_locker() {
-    let locker_dir = get_locker_dir();
+pub fn init_locker() -> Result<(), SmartLockerError> {
+    let locker_dir = get_locker_dir()?;
     // Check if the locker directory exists
     if !locker_dir.exists() {
-        fs::create_dir_all(&locker_dir).expect("Error creating folder ~/.locker");
+        fs::create_dir_all(&locker_dir).map_err(|e| {
+            SmartLockerError::FileSystemError(format!("Error creating folder ~/.locker: {}", e))
+        })?;
         println!("✅ Secure folder created: {:?}", locker_dir);
     }
 
@@ -18,11 +21,15 @@ pub fn init_locker() {
     let key_path = locker_dir.join("locker.key");
     if !key_path.exists() {
         let key = generate_key();
-        fs::write(&key_path, key).expect("Error writing the key");
+        fs::write(&key_path, key).map_err(|e| {
+            SmartLockerError::FileSystemError(format!("Error writing the key: {}", e))
+        })?;
         println!("✅ Key generated and saved: {:?}", key_path);
     } else {
         println!("🔑 A key already exists: {:?}", key_path);
     }
+
+    Ok(())
 }
 
 pub fn generate_key() -> Vec<u8> {
@@ -34,12 +41,17 @@ pub fn generate_key() -> Vec<u8> {
 }
 
 /// Generates a symmetric key from a passphrase and salt.
-pub fn derive_key_from_passphrase(passphrase: &str, salt: &[u8]) -> Vec<u8> {
-    let locker_dir = get_locker_dir();
+pub fn derive_key_from_passphrase(
+    passphrase: &str,
+    salt: &[u8],
+) -> Result<Vec<u8>, SmartLockerError> {
+    let locker_dir = get_locker_dir()?;
 
     // Check if the locker directory exists
     if !locker_dir.exists() {
-        fs::create_dir_all(&locker_dir).expect("Error creating folder ~/.locker");
+        fs::create_dir_all(&locker_dir).map_err(|e| {
+            SmartLockerError::FileSystemError(format!("Error creating folder ~/.locker: {}", e))
+        })?;
         println!("✅ Secure folder created: {:?}", locker_dir);
     }
 
@@ -52,15 +64,18 @@ pub fn derive_key_from_passphrase(passphrase: &str, salt: &[u8]) -> Vec<u8> {
         passphrase.as_bytes(),
         &mut key,
     );
-    key.to_vec()
+
+    Ok(key.to_vec())
 }
 
 /// Retourne le chemin du répertoire `.locker`.
-pub fn get_locker_dir() -> PathBuf {
+pub fn get_locker_dir() -> Result<PathBuf, SmartLockerError> {
     if let Ok(custom_home) = env::var("SMART_LOCKER_HOME") {
-        PathBuf::from(custom_home)
+        Ok(PathBuf::from(custom_home))
     } else {
-        let user_dirs = UserDirs::new().expect("Unable to access user directory");
-        user_dirs.home_dir().join(".locker")
+        let user_dirs = UserDirs::new().ok_or(SmartLockerError::FileSystemError(
+            "Unable to access user directory".to_string(),
+        ))?;
+        Ok(user_dirs.home_dir().join(".locker"))
     }
 }

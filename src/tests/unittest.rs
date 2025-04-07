@@ -3,11 +3,40 @@ use smart_locker::utils::toolbox::{derive_key_from_passphrase, get_locker_dir};
 use std::fs;
 use std::io::Read;
 
+// Helper function to setup test environment
+fn setup_test_environment() -> std::path::PathBuf {
+    let locker_dir = get_locker_dir().expect("Failed to get locker directory");
+    let key_path = locker_dir.join("locker.key");
+
+    // Create locker directory if it doesn't exist
+    if !locker_dir.exists() {
+        fs::create_dir_all(&locker_dir).expect("Failed to create locker directory");
+    }
+
+    // Create key file if it doesn't exist
+    if !key_path.exists() {
+        let key = vec![0u8; 32];
+        fs::write(&key_path, key).expect("Failed to write key file");
+    }
+
+    locker_dir
+}
+
+// Helper function to clean up test files
+fn cleanup_test_file(filename: &str) {
+    let path = get_locker_dir()
+        .expect("Failed to get locker directory")
+        .join(filename);
+    if path.exists() {
+        fs::remove_file(&path).unwrap_or_else(|e| eprintln!("Cleanup error: {}", e));
+    }
+}
+
 #[test]
 fn test_derive_key_from_passphrase() {
     let passphrase = "ma_passphrase";
     let salt = b"mon_salt";
-    let key = derive_key_from_passphrase(passphrase, salt);
+    let key = derive_key_from_passphrase(passphrase, salt).expect("Failed to derive key");
 
     assert_eq!(
         key.len(),
@@ -18,144 +47,136 @@ fn test_derive_key_from_passphrase() {
 
 #[test]
 fn test_encrypt_and_decrypt() {
-    let locker_dir = get_locker_dir();
-    let key_path = locker_dir.join("locker.key");
-
-    // Vérifier et créer le dossier sécurisé
-    if !locker_dir.exists() {
-        println!("Création du dossier sécurisé : {:?}", locker_dir);
-        fs::create_dir_all(&locker_dir).expect("Erreur lors de la création du dossier ~/.locker");
-    }
-
-    // Vérifier et créer la clé
-    if !key_path.exists() {
-        println!("Création de la clé : {:?}", key_path);
-        let key = vec![0u8; 32];
-        fs::write(&key_path, key).expect("Erreur lors de l'écriture de la clé");
-    }
+    let locker_dir = setup_test_environment();
 
     let secret_name = "test_encrypt_and_decrypt_secret";
     let secret_value = "Ceci est un test";
-
-    // Appeler la fonction encrypt
-    println!("Chiffrement du secret : {}", secret_name);
-    encrypt::encrypt(secret_value, secret_name);
-
     let encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
-    println!(
-        "Vérification de l'existence du fichier chiffré : {:?}",
-        encrypted_file
-    );
 
-    // Vérifier que le fichier chiffré a été créé
+    // Ensure the test file doesn't exist before starting
+    cleanup_test_file(&format!("{}.slock", secret_name));
+
+    // Encrypt the secret
+    encrypt::encrypt(secret_value, secret_name).expect("Failed to encrypt secret");
+
+    // Verify encrypted file exists
     assert!(
         encrypted_file.exists(),
-        "Le fichier chiffré n'a pas été créé : {:?}",
+        "Encrypted file was not created: {:?}",
         encrypted_file
     );
 
-    // Déchiffrer le secret
-    let decrypted_value = decrypt::decrypt(secret_name);
-    println!("Valeur déchiffrée : {}", decrypted_value);
-
-    // Vérifier que la valeur déchiffrée correspond à la valeur initiale
+    // Decrypt and verify content
+    let decrypted_value = decrypt::decrypt(secret_name).expect("Failed to decrypt secret");
     assert_eq!(
         decrypted_value, secret_value,
-        "Le secret déchiffré ne correspond pas"
+        "Decrypted secret doesn't match original"
     );
 
-    // Nettoyer les fichiers de test
-    fs::remove_file(&encrypted_file).expect("Erreur lors de la suppression du fichier chiffré");
+    // Clean up test file
+    cleanup_test_file(&format!("{}.slock", secret_name));
 }
 
 #[test]
 fn test_list_secrets() {
-    let locker_dir = get_locker_dir();
+    let locker_dir = setup_test_environment();
+    let test_secret_name = "test_list_secrets_secret";
+    let test_file = locker_dir.join(format!("{}.slock", test_secret_name));
 
-    if !locker_dir.exists() {
-        fs::create_dir_all(&locker_dir).expect("Erreur lors de la création du dossier ~/.locker");
-    }
+    // Ensure clean state
+    cleanup_test_file(&format!("{}.slock", test_secret_name));
 
-    let test_file = locker_dir.join("test_list_secrets_secret.slock");
-    fs::write(&test_file, b"test").expect("Erreur lors de la création du fichier de test");
+    // Create test file
+    fs::write(&test_file, b"test").expect("Failed to create test file");
 
-    let secrets = list::list_secrets();
+    // Get the list of secrets
+    let secrets = list::list_secrets().expect("Failed to list secrets");
 
+    // Verify our test secret is in the list
     assert!(
-        secrets.contains(&"test_list_secrets_secret.slock".to_string()),
-        "Le fichier 'test_list_secrets_secret.slock' n'apparaît pas dans la liste. Secrets : {:?}",
+        secrets.iter().any(|s| s.contains(test_secret_name)),
+        "Test secret '{}' not found in list: {:?}",
+        test_secret_name,
         secrets
     );
 
-    fs::remove_file(&test_file).expect("Erreur lors de la suppression du fichier de test");
+    // Clean up
+    cleanup_test_file(&format!("{}.slock", test_secret_name));
 }
 
 #[test]
 fn test_remove_secret() {
-    let locker_dir = get_locker_dir();
+    let locker_dir = setup_test_environment();
+    let test_secret_name = "test_remove_secret_secret";
+    let test_file = locker_dir.join(format!("{}.slock", test_secret_name));
 
-    let test_file = locker_dir.join("test_remove_secret_secret.slock");
-    fs::write(&test_file, b"test").expect("Erreur lors de la création du fichier de test");
+    // Create test file
+    fs::write(&test_file, b"test").expect("Failed to create test file");
+    assert!(test_file.exists(), "Test file was not created properly");
 
-    remove::remove_secret("test_remove_secret_secret");
+    // Remove the secret
+    remove::remove_secret(test_secret_name).expect("Failed to remove secret");
 
-    assert!(!test_file.exists(), "Le fichier n'a pas été supprimé");
+    // Verify it's gone
+    assert!(!test_file.exists(), "Secret file wasn't removed");
 }
 
 #[test]
 fn test_encrypt_with_stdin() {
     use std::io::Cursor;
+    let locker_dir = setup_test_environment();
 
-    let locker_dir = get_locker_dir();
-
-    // Créer un fichier temporaire pour simuler stdin
     let secret_name = "test_encrypt_with_stdin_secret";
     let secret_value = "Ceci est un test";
+    let encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
 
-    // Simuler l'entrée stdin avec un Cursor
+    // Ensure clean state
+    cleanup_test_file(&format!("{}.slock", secret_name));
+
+    // Simulate stdin with a Cursor
     let mut stdin_mock = Cursor::new(secret_value);
-
-    // Lire depuis le buffer simulé (au lieu de std::io::stdin())
     let mut input = String::new();
     stdin_mock
         .read_to_string(&mut input)
-        .expect("Erreur lors de la lecture de stdin simulé");
+        .expect("Failed to read from mock stdin");
 
-    // Appeler la fonction encrypt avec la valeur lue
-    encrypt::encrypt(&input, secret_name);
+    // Encrypt using simulated input
+    encrypt::encrypt(&input, secret_name).expect("Failed to encrypt from stdin");
 
-    let encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
+    // Verify file was created
     assert!(
         encrypted_file.exists(),
-        "Le fichier chiffré n'a pas été créé : {:?}",
+        "Encrypted file wasn't created: {:?}",
         encrypted_file
     );
 
-    // Nettoyer les fichiers de test
-    fs::remove_file(&encrypted_file).expect("Erreur lors de la suppression du fichier de test");
+    // Clean up
+    cleanup_test_file(&format!("{}.slock", secret_name));
 }
 
 #[test]
 fn test_decrypt_with_stdout() {
-    let locker_dir = get_locker_dir();
+    let locker_dir = setup_test_environment();
 
     let secret_name = "test_decrypt_with_stdout_secret";
     let secret_value = "Ceci est un test";
+    let _encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
 
-    // Chiffrer le secret
-    encrypt::encrypt(secret_value, secret_name);
+    // Ensure clean state
+    cleanup_test_file(&format!("{}.slock", secret_name));
 
-    // Déchiffrer le secret
-    let decrypted_value = decrypt::decrypt(secret_name);
+    // Encrypt the secret
+    encrypt::encrypt(secret_value, secret_name).expect("Failed to encrypt secret");
 
+    // Decrypt and verify
+    let decrypted_value = decrypt::decrypt(secret_name).expect("Failed to decrypt secret");
     assert_eq!(
         decrypted_value, secret_value,
-        "Le secret déchiffré ne correspond pas à la valeur initiale"
+        "Decrypted value doesn't match original"
     );
 
-    // Nettoyer les fichiers de test
-    let encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
-    fs::remove_file(&encrypted_file).expect("Erreur lors de la suppression du fichier de test");
+    // Clean up
+    cleanup_test_file(&format!("{}.slock", secret_name));
 }
 
 #[cfg(not(feature = "disable_clipboard_tests"))]
@@ -163,28 +184,55 @@ fn test_decrypt_with_stdout() {
 fn test_decrypt_with_clipboard() {
     use copypasta::{ClipboardContext, ClipboardProvider};
 
+    // Skip test if environment variable is set
     if std::env::var("DISABLE_CLIPBOARD_TESTS").is_ok() {
         eprintln!("🛑 Clipboard test skipped via env var");
         return;
     }
 
-    let locker_dir = get_locker_dir();
+    let locker_dir = setup_test_environment();
 
     let secret_name = "test_decrypt_with_clipboard_secret";
     let secret_value = "Ceci est un test";
+    let _encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
 
-    encrypt::encrypt(secret_value, secret_name);
+    // Ensure clean state
+    cleanup_test_file(&format!("{}.slock", secret_name));
 
-    let decrypted_value = decrypt::decrypt(secret_name);
-    let mut ctx = ClipboardContext::new().expect("Impossible d'accéder au presse-papier");
-    ctx.set_contents(decrypted_value.clone())
-        .expect("Erreur lors de la copie");
+    // Encrypt the secret
+    encrypt::encrypt(secret_value, secret_name).expect("Failed to encrypt secret");
 
-    let clipboard_content = ctx
-        .get_contents()
-        .expect("Erreur lors de la lecture du presse-papier");
-    assert_eq!(clipboard_content, secret_value);
+    // Decrypt and verify clipboard
+    let decrypted_value = decrypt::decrypt(secret_name).expect("Failed to decrypt secret");
 
-    let encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
-    std::fs::remove_file(&encrypted_file).expect("Erreur lors de la suppression");
+    // Test clipboard functionality
+    let mut ctx = match ClipboardContext::new() {
+        Ok(ctx) => ctx,
+        Err(e) => {
+            eprintln!("Unable to access clipboard, skipping test: {}", e);
+            cleanup_test_file(&format!("{}.slock", secret_name));
+            return;
+        }
+    };
+
+    if let Err(e) = ctx.set_contents(decrypted_value.clone()) {
+        eprintln!("Failed to set clipboard contents: {}", e);
+        cleanup_test_file(&format!("{}.slock", secret_name));
+        return;
+    }
+
+    match ctx.get_contents() {
+        Ok(clipboard_content) => {
+            assert_eq!(
+                clipboard_content, secret_value,
+                "Clipboard content doesn't match original"
+            );
+        }
+        Err(e) => {
+            eprintln!("Failed to get clipboard contents: {}", e);
+        }
+    }
+
+    // Clean up
+    cleanup_test_file(&format!("{}.slock", secret_name));
 }

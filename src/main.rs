@@ -4,16 +4,30 @@ use colored::*; // For colored output
 use smart_locker::commands::{
     decrypt::decrypt, encrypt::encrypt, list::list_secrets, remove::remove_secret,
 };
+
 use smart_locker::utils::toolbox::{derive_key_from_passphrase, get_locker_dir, init_locker};
 use std::fs;
 use std::io::Read;
+use std::process::exit;
+
 fn main() {
     // Display the logo only for general help
     if std::env::args().any(|arg| arg == "--help" || arg == "-h") {
         display_logo();
     }
+
     // Check if the ~/.locker folder exists
-    let locker_dir = get_locker_dir();
+    let locker_dir = match get_locker_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!(
+                "{}",
+                format!("Error getting locker directory: {}", err).red()
+            );
+            exit(1);
+        }
+    };
+
     // CLI command management
     let matches = Command::new("SmartLocker")
         .version("1.0")
@@ -146,10 +160,19 @@ fn main() {
         display_logo(); // Display the logo only for the init command
         if let Some(passphrase) = matches.get_one::<String>("passphrase") {
             let salt = b"smartlocker_salt"; // You can customize the salt
-            let key = derive_key_from_passphrase(passphrase, salt);
+            let key = match derive_key_from_passphrase(passphrase, salt) {
+                Ok(k) => k,
+                Err(err) => {
+                    eprintln!("{}", format!("Error deriving key: {}", err).red());
+                    exit(1);
+                }
+            };
 
             let key_path = locker_dir.join("locker.key");
-            fs::write(&key_path, key).expect("Error writing the key");
+            if let Err(err) = fs::write(&key_path, key) {
+                eprintln!("{}", format!("Error writing the key: {}", err).red());
+                exit(1);
+            }
             println!(
                 "{}",
                 format!(
@@ -159,75 +182,135 @@ fn main() {
                 .green()
             );
         } else {
-            init_locker(); // Call the existing function to generate a random key
+            if let Err(err) = init_locker() {
+                eprintln!("{}", format!("Error initializing locker: {}", err).red());
+                exit(1);
+            }
             println!("{}", "✅ Vault initialized successfully!".green());
         }
     } else if let Some(matches) = matches.subcommand_matches("encrypt") {
-        let name = matches.get_one::<String>("name").unwrap();
+        let name = matches.get_one::<String>("name").expect("Name is required");
         let value = if let Some(value) = matches.get_one::<String>("value") {
             value.clone()
         } else {
             // Read from stdin if --value is not provided
             let mut input = String::new();
-            std::io::stdin()
-                .read_to_string(&mut input)
-                .expect("Error reading from stdin");
-            input.trim().to_string()
-        };
-        encrypt(&value, name);
-        println!(
-            "{}",
-            format!("✅ Secret '{}' encrypted successfully!", name).green()
-        );
-    } else if let Some(matches) = matches.subcommand_matches("decrypt") {
-        let name = matches.get_one::<String>("name").unwrap();
-        let decrypted_value = decrypt(name);
-
-        if matches.get_flag("clipboard") {
-            if cfg!(target_os = "linux") && std::env::var("WSL_DISTRO_NAME").is_ok() {
-                use std::process::{Command, Stdio};
-                let mut child = Command::new("clip.exe")
-                    .stdin(Stdio::piped())
-                    .spawn()
-                    .expect("Unable to execute clip.exe");
-                {
-                    let stdin = child.stdin.as_mut().expect("Unable to access stdin");
-                    use std::io::Write;
-                    stdin
-                        .write_all(decrypted_value.as_bytes())
-                        .expect("Error writing to clip.exe");
+            match std::io::stdin().read_to_string(&mut input) {
+                Ok(_) => input.trim().to_string(),
+                Err(err) => {
+                    eprintln!("{}", format!("Error reading from stdin: {}", err).red());
+                    exit(1);
                 }
-                child.wait().expect("Error executing clip.exe");
-                println!("{}", "✅ Secret copied to Windows clipboard!".green());
-            } else {
-                // Copy to Linux clipboard
-                use copypasta::{ClipboardContext, ClipboardProvider};
-                let mut ctx = ClipboardContext::new().expect("Unable to access the clipboard");
-                ctx.set_contents(decrypted_value.clone())
-                    .expect("Error copying to the clipboard");
-                println!("{}", "✅ Secret copied to the clipboard!".green());
             }
-        } else {
-            // Print the decrypted value to the terminal
-            println!("{}", decrypted_value.green());
+        };
+
+        match encrypt(&value, name) {
+            Ok(_) => println!(
+                "{}",
+                format!("✅ Secret '{}' encrypted successfully!", name).green()
+            ),
+            Err(err) => {
+                eprintln!("{}", format!("Error encrypting secret: {}", err).red());
+                exit(1);
+            }
+        }
+    } else if let Some(matches) = matches.subcommand_matches("decrypt") {
+        let name = matches.get_one::<String>("name").expect("Name is required");
+
+        match decrypt(name) {
+            Ok(decrypted_value) => {
+                if matches.get_flag("clipboard") {
+                    if cfg!(target_os = "linux") && std::env::var("WSL_DISTRO_NAME").is_ok() {
+                        use std::process::{Command, Stdio};
+                        match Command::new("clip.exe").stdin(Stdio::piped()).spawn() {
+                            Ok(mut child) => {
+                                {
+                                    let stdin = match child.stdin.as_mut() {
+                                        Some(stdin) => stdin,
+                                        None => {
+                                            eprintln!("{}", "Unable to access stdin".red());
+                                            exit(1);
+                                        }
+                                    };
+                                    use std::io::Write;
+                                    if let Err(err) = stdin.write_all(decrypted_value.as_bytes()) {
+                                        eprintln!(
+                                            "{}",
+                                            format!("Error writing to clip.exe: {}", err).red()
+                                        );
+                                        exit(1);
+                                    }
+                                }
+                                if let Err(err) = child.wait() {
+                                    eprintln!(
+                                        "{}",
+                                        format!("Error executing clip.exe: {}", err).red()
+                                    );
+                                    exit(1);
+                                }
+                                println!("{}", "✅ Secret copied to Windows clipboard!".green());
+                            }
+                            Err(err) => {
+                                eprintln!(
+                                    "{}",
+                                    format!("Unable to execute clip.exe: {}", err).red()
+                                );
+                                exit(1);
+                            }
+                        };
+                    } else {
+                        // Copy to Linux clipboard
+                        use copypasta::{ClipboardContext, ClipboardProvider};
+                        let mut ctx =
+                            ClipboardContext::new().expect("Unable to access the clipboard");
+                        if let Err(err) = ctx.set_contents(decrypted_value.clone()) {
+                            eprintln!(
+                                "{}",
+                                format!("Error copying to the clipboard: {}", err).red()
+                            );
+                            exit(1);
+                        }
+                        println!("{}", "✅ Secret copied to the clipboard!".green());
+                    }
+                } else {
+                    // Print the decrypted value to the terminal
+                    println!("{}", decrypted_value.green());
+                }
+            }
+            Err(err) => {
+                eprintln!("{}", format!("Error decrypting secret: {}", err).red());
+                exit(1);
+            }
         }
     } else if matches.subcommand_matches("list").is_some() {
-        let secrets = list_secrets();
-        if secrets.is_empty() {
-            println!("{}", "⚠️ No secrets found.".yellow());
-        } else {
-            println!("{}", "🔒 Available secrets:".blue());
-            for secret in secrets {
-                println!("{}", secret);
+        match list_secrets() {
+            Ok(secrets) => {
+                if secrets.is_empty() {
+                    println!("{}", "⚠️ No secrets found.".yellow());
+                } else {
+                    println!("{}", "🔒 Available secrets:".blue());
+                    for secret in secrets {
+                        println!("{}", secret);
+                    }
+                }
+            }
+            Err(err) => {
+                eprintln!("{}", format!("Error listing secrets: {}", err).red());
+                exit(1);
             }
         }
     } else if let Some(matches) = matches.subcommand_matches("remove") {
-        let name = matches.get_one::<String>("name").unwrap();
-        remove_secret(name);
-        println!(
-            "{}",
-            format!("✅ Secret '{}' deleted successfully!", name).green()
-        );
+        let name = matches.get_one::<String>("name").expect("Name is required");
+        match remove_secret(name) {
+            Ok(_) => println!(
+                "{}",
+                format!("✅ Secret '{}' deleted successfully!", name).green()
+            ),
+            Err(err) => {
+                eprintln!("{}", format!("Error deleting secret: {}", err).red());
+                exit(1);
+            }
+        }
     }
 }
 
