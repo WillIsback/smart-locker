@@ -1,4 +1,4 @@
-use crate::SmartLockerError;
+use colored::Colorize;
 use directories::UserDirs;
 use ring::pbkdf2;
 use std::env;
@@ -28,8 +28,48 @@ pub fn init_locker() -> Result<(), SmartLockerError> {
     } else {
         println!("🔑 A key already exists: {:?}", key_path);
     }
+}
 
-    Ok(())
+pub fn init_locker_with_passphrase(passphrase: Option<&str>) {
+    let locker_dir = get_locker_dir();
+    if !locker_dir.exists() {
+        fs::create_dir_all(&locker_dir).expect("Error creating folder ~/.locker");
+        println!("✅ Secure folder created: {:?}", locker_dir);
+    }
+
+    let key_path = locker_dir.join("locker.key");
+
+    if let Some(passphrase) = passphrase {
+        let salt = b"smartlocker_salt"; // Vous pouvez personnaliser le sel
+        let new_key = derive_key_from_passphrase(passphrase, salt);
+
+        if key_path.exists() {
+            println!("🔑 Une clé existe déjà : {:?}", key_path);
+            println!("⚠️ Attention : Générer une nouvelle clé remplacera l'ancienne et rendra les anciens secrets inaccessibles.");
+            println!("Voulez-vous continuer ? (yes/no)");
+
+            let mut input = String::new();
+            std::io::stdin()
+                .read_line(&mut input)
+                .expect("Erreur lors de la lecture de l'entrée utilisateur");
+            if input.trim().to_lowercase() != "yes" {
+                println!("❌ Opération annulée.");
+                return;
+            }
+        }
+
+        fs::write(&key_path, new_key).expect("Erreur lors de l'écriture de la clé");
+        println!(
+            "{}",
+            format!(
+                "✅ Nouvelle clé générée à partir de la passphrase et sauvegardée : {:?}",
+                key_path
+            )
+            .green()
+        );
+    } else {
+        init_locker(); // Appelle la fonction existante pour générer une clé aléatoire
+    }
 }
 
 pub fn generate_key() -> Vec<u8> {
@@ -71,11 +111,35 @@ pub fn derive_key_from_passphrase(
 /// Retourne le chemin du répertoire `.locker`.
 pub fn get_locker_dir() -> Result<PathBuf, SmartLockerError> {
     if let Ok(custom_home) = env::var("SMART_LOCKER_HOME") {
-        Ok(PathBuf::from(custom_home))
+        PathBuf::from(custom_home)
     } else {
-        let user_dirs = UserDirs::new().ok_or(SmartLockerError::FileSystemError(
-            "Unable to access user directory".to_string(),
-        ))?;
-        Ok(user_dirs.home_dir().join(".locker"))
+        let user_dirs = UserDirs::new().expect("Unable to access user directory");
+        user_dirs.home_dir().join(".locker")
+    }
+}
+
+pub fn backup_key() {
+    let locker_dir = get_locker_dir();
+    let key_path = locker_dir.join("locker.key");
+    let backup_path = locker_dir.join("locker.key.backup");
+
+    if key_path.exists() {
+        fs::copy(&key_path, &backup_path).expect("Erreur lors de la sauvegarde de la clé");
+        println!("✅ Clé sauvegardée avec succès : {:?}", backup_path);
+    } else {
+        println!("❌ Aucune clé à sauvegarder.");
+    }
+}
+
+pub fn restore_key() {
+    let locker_dir = get_locker_dir();
+    let key_path = locker_dir.join("locker.key");
+    let backup_path = locker_dir.join("locker.key.backup");
+
+    if backup_path.exists() {
+        fs::copy(&backup_path, &key_path).expect("Erreur lors de la restauration de la clé");
+        println!("✅ Clé restaurée avec succès : {:?}", key_path);
+    } else {
+        println!("❌ Aucune sauvegarde de clé trouvée.");
     }
 }
