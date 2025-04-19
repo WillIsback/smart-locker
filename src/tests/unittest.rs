@@ -71,8 +71,8 @@ fn test_list_secrets() {
     let secrets = list::list_secrets();
 
     assert!(
-        secrets.contains(&"test_list_secrets_secret.slock".to_string()),
-        "Le fichier 'test_list_secrets_secret.slock' n'apparaît pas dans la liste. Secrets : {:?}",
+        secrets.contains(&"test_list_secrets_secret".to_string()),
+        "Le fichier 'test_list_secrets_secret' n'apparaît pas dans la liste. Secrets : {:?}",
         secrets
     );
 
