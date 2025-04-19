@@ -15,7 +15,7 @@ fn main() {
     }
     // CLI command management
     let matches = Command::new("SmartLocker")
-        .version("1.0")
+        .version(env!("CARGO_PKG_VERSION")) // Dynamically fetch version from Cargo.toml
         .author("William")
         .about("🔐 A CLI tool to encrypt and manage sensitive secrets")
         .long_about(
