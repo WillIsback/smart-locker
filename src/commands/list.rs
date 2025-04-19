@@ -11,7 +11,7 @@ pub fn list_secrets() -> Vec<String> {
                 if file_type.is_file() {
                     let filename = entry.file_name().to_string_lossy().to_string();
                     if filename.ends_with(".slock") {
-                        secrets.push(filename);
+                        secrets.push(filename.trim_end_matches(".slock").to_string());
                     }
                 }
             }

@@ -2,18 +2,15 @@
 use clap::{Arg, Command};
 use colored::*; // For colored output
 use smart_locker::commands::{
-    decrypt::decrypt, encrypt::encrypt, list::list_secrets, remove::remove_secret,
+    decrypt::decrypt, encrypt::encrypt, list::list_secrets, remove::remove_secret, export::export,
 };
-use smart_locker::utils::toolbox::{derive_key_from_passphrase, get_locker_dir, init_locker};
-use std::fs;
+use smart_locker::utils::toolbox::{init_locker_with_passphrase, backup_key, restore_key};
 use std::io::Read;
 fn main() {
     // Display the logo only for general help
     if std::env::args().any(|arg| arg == "--help" || arg == "-h") {
         display_logo();
     }
-    // Check if the ~/.locker folder exists
-    let locker_dir = get_locker_dir();
     // CLI command management
     let matches = Command::new("SmartLocker")
         .version("1.0")
@@ -33,8 +30,33 @@ fn main() {
             --name: Name of the secret to decrypt.\n\
             --clipboard: Copies the decrypted secret to the clipboard.\n\n\
         - list: Lists all available secrets.\n\
-        - remove: Deletes a secret.\n\n\
+        - remove: Deletes a secret.\n\
+        - backup-key: Creates a backup of the encryption key.\n\
+        - restore-key: Restores the encryption key from a backup.\n\n\
+        - export: Exports secrets to a file in a specified format.\n\
+            --format: Format to export secrets (e.g., env).\n\
+            --output: Output file path (default: .env).\n\n\
         Use --help or -h after a command for more details.",
+        )
+        .subcommand(
+            Command::new("backup-key")
+                .about("Creates a backup of the encryption key")
+                .long_about(
+                    "Creates a backup of the encryption key used to encrypt and decrypt secrets.\n\n\
+                EXAMPLES:\n\
+                - Backup the encryption key:\n\
+                  smart-locker backup-key",
+                ),
+        )
+        .subcommand(
+            Command::new("restore-key")
+                .about("Restores the encryption key from a backup")
+                .long_about(
+                    "Restores the encryption key from a previously created backup.\n\n\
+                EXAMPLES:\n\
+                - Restore the encryption key:\n\
+                  smart-locker restore-key",
+                ),
         )
         .subcommand(
             Command::new("init")
@@ -140,28 +162,46 @@ fn main() {
                         .help("Name of the secret to delete"),
                 ),
         )
+        .subcommand(
+            Command::new("export")
+                .about("Exports secrets to a file in a specified format")
+                .long_about(
+                    "Exports secrets to a file in a specified format. Supported formats include:
+                    - env: Exports secrets as environment variables in a .env file.
+
+                EXAMPLES:
+                - Export secrets to a .env file:
+                  smart-locker export --format env --output .env",
+                )
+                .arg(
+                    Arg::new("format")
+                        .short('f')
+                        .long("format")
+                        .num_args(1)
+                        .required(true)
+                        .help("Format to export secrets (e.g., env)"),
+                )
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .num_args(1)
+                        .required(false)
+                        .help("Output file path (default: .env)"),
+                ),
+        )
         .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("init") {
-        display_logo(); // Display the logo only for the init command
-        if let Some(passphrase) = matches.get_one::<String>("passphrase") {
-            let salt = b"smartlocker_salt"; // You can customize the salt
-            let key = derive_key_from_passphrase(passphrase, salt);
-
-            let key_path = locker_dir.join("locker.key");
-            fs::write(&key_path, key).expect("Error writing the key");
-            println!(
-                "{}",
-                format!(
-                    "✅ Key generated from the passphrase and saved: {:?}",
-                    key_path
-                )
-                .green()
-            );
-        } else {
-            init_locker(); // Call the existing function to generate a random key
-            println!("{}", "✅ Vault initialized successfully!".green());
-        }
+        display_logo(); // Affiche le logo uniquement pour la commande init
+    
+        // Récupérer la passphrase si elle est fournie
+        let passphrase = matches.get_one::<String>("passphrase").map(|s| s.as_str());
+    
+        // Appeler init_locker_with_passphrase avec ou sans passphrase
+        init_locker_with_passphrase(passphrase);
+    
+        println!("{}", "✅ Vault initialized successfully!".green());
     } else if let Some(matches) = matches.subcommand_matches("encrypt") {
         let name = matches.get_one::<String>("name").unwrap();
         let value = if let Some(value) = matches.get_one::<String>("value") {
@@ -228,6 +268,16 @@ fn main() {
             "{}",
             format!("✅ Secret '{}' deleted successfully!", name).green()
         );
+    } else if let Some(_) = matches.subcommand_matches("backup-key") {
+        backup_key();
+        println!("{}", "✅ Encryption key backed up successfully!".green());
+    } else if let Some(_) = matches.subcommand_matches("restore-key") {
+        restore_key();
+        println!("{}", "✅ Encryption key restored successfully!".green());
+    } else if let Some(matches) = matches.subcommand_matches("export") {
+        let format = matches.get_one::<String>("format").unwrap();
+        let output = matches.get_one::<String>("output").map(|s| s.as_str());
+        export(format, output);
     }
 }
 

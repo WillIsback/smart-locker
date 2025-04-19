@@ -1,20 +1,9 @@
 use smart_locker::commands::{decrypt, encrypt, list, remove};
-use smart_locker::utils::toolbox::{derive_key_from_passphrase, get_locker_dir};
+use smart_locker::utils::toolbox::{get_locker_dir};
 use std::fs;
 use std::io::Read;
 
-#[test]
-fn test_derive_key_from_passphrase() {
-    let passphrase = "ma_passphrase";
-    let salt = b"mon_salt";
-    let key = derive_key_from_passphrase(passphrase, salt);
 
-    assert_eq!(
-        key.len(),
-        32,
-        "La clé dérivée doit avoir une longueur de 32 octets"
-    );
-}
 
 #[test]
 fn test_encrypt_and_decrypt() {
