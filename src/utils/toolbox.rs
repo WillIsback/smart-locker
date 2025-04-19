@@ -1,3 +1,5 @@
+use crate::LockerResult;
+use crate::SmartLockerError;
 use colored::Colorize;
 use directories::UserDirs;
 use ring::pbkdf2;
@@ -7,17 +9,10 @@ use std::num::NonZeroU32;
 use std::path::PathBuf;
 
 /// Initialise le répertoire `.locker` et génère une clé symétrique si nécessaire.
-pub fn init_locker() -> Result<(), SmartLockerError> {
+pub fn init_locker() -> LockerResult<()> {
     let locker_dir = get_locker_dir()?;
-    // Check if the locker directory exists
-    if !locker_dir.exists() {
-        fs::create_dir_all(&locker_dir).map_err(|e| {
-            SmartLockerError::FileSystemError(format!("Error creating folder ~/.locker: {}", e))
-        })?;
-        println!("✅ Secure folder created: {:?}", locker_dir);
-    }
+    ensure_dir_exists(&locker_dir)?;
 
-    // Check if the key file exists
     let key_path = locker_dir.join("locker.key");
     if !key_path.exists() {
         let key = generate_key();
@@ -28,10 +23,36 @@ pub fn init_locker() -> Result<(), SmartLockerError> {
     } else {
         println!("🔑 A key already exists: {:?}", key_path);
     }
+
+    Ok(())
 }
 
-pub fn init_locker_with_passphrase(passphrase: Option<&str>) {
-    let locker_dir = get_locker_dir();
+/// Vérifie et crée un répertoire s'il n'existe pas.
+pub fn ensure_dir_exists(path: &PathBuf) -> LockerResult<()> {
+    if !path.exists() {
+        fs::create_dir_all(path).map_err(|e| {
+            SmartLockerError::FileSystemError(format!("Error creating folder {:?}: {}", path, e))
+        })?;
+        println!("✅ Directory created: {:?}", path);
+    }
+    Ok(())
+}
+
+/// Retourne le chemin du répertoire `.locker`.
+pub fn get_locker_dir() -> LockerResult<PathBuf> {
+    if let Ok(custom_home) = env::var("SMART_LOCKER_HOME") {
+        Ok(PathBuf::from(custom_home))
+    } else {
+        let user_dirs = UserDirs::new().ok_or_else(|| {
+            SmartLockerError::FileSystemError("Unable to access user directory".to_string())
+        })?;
+        Ok(user_dirs.home_dir().join(".locker"))
+    }
+}
+
+pub fn init_locker_with_passphrase(passphrase: Option<&str>) -> Result<(), SmartLockerError> {
+    let locker_dir = get_locker_dir()?; // `?` propagates the error as a `Result`
+
     if !locker_dir.exists() {
         fs::create_dir_all(&locker_dir).expect("Error creating folder ~/.locker");
         println!("✅ Secure folder created: {:?}", locker_dir);
@@ -40,38 +61,41 @@ pub fn init_locker_with_passphrase(passphrase: Option<&str>) {
     let key_path = locker_dir.join("locker.key");
 
     if let Some(passphrase) = passphrase {
-        let salt = b"smartlocker_salt"; // Vous pouvez personnaliser le sel
-        let new_key = derive_key_from_passphrase(passphrase, salt);
+        let salt = b"smartlocker_salt"; // Customize the salt
+        let new_key = derive_key_from_passphrase(passphrase, salt)?; // `?` propagates errors
 
         if key_path.exists() {
-            println!("🔑 Une clé existe déjà : {:?}", key_path);
-            println!("⚠️ Attention : Générer une nouvelle clé remplacera l'ancienne et rendra les anciens secrets inaccessibles.");
-            println!("Voulez-vous continuer ? (yes/no)");
+            println!("🔑 A key already exists: {:?}", key_path);
+            println!("⚠️ Warning: Generating a new key will replace the old one and make old secrets inaccessible.");
+            println!("Do you want to continue? (yes/no)");
 
             let mut input = String::new();
             std::io::stdin()
                 .read_line(&mut input)
-                .expect("Erreur lors de la lecture de l'entrée utilisateur");
+                .expect("Error reading user input");
             if input.trim().to_lowercase() != "yes" {
-                println!("❌ Opération annulée.");
-                return;
+                println!("❌ Operation canceled.");
+                return Ok(()); // Return early with `Ok(())`
             }
         }
 
-        fs::write(&key_path, new_key).expect("Erreur lors de l'écriture de la clé");
+        fs::write(&key_path, new_key).expect("Error writing the key");
         println!(
             "{}",
             format!(
-                "✅ Nouvelle clé générée à partir de la passphrase et sauvegardée : {:?}",
+                "✅ New key generated from the passphrase and saved: {:?}",
                 key_path
             )
             .green()
         );
     } else {
-        init_locker(); // Appelle la fonction existante pour générer une clé aléatoire
+        init_locker()?; // Call another function that returns `Result`
     }
+
+    Ok(()) // Return success
 }
 
+/// Génère une clé symétrique aléatoire.
 pub fn generate_key() -> Vec<u8> {
     use rand::Rng;
     let mut rng = rand::rng();
@@ -108,38 +132,36 @@ pub fn derive_key_from_passphrase(
     Ok(key.to_vec())
 }
 
-/// Retourne le chemin du répertoire `.locker`.
-pub fn get_locker_dir() -> Result<PathBuf, SmartLockerError> {
-    if let Ok(custom_home) = env::var("SMART_LOCKER_HOME") {
-        PathBuf::from(custom_home)
-    } else {
-        let user_dirs = UserDirs::new().expect("Unable to access user directory");
-        user_dirs.home_dir().join(".locker")
-    }
-}
-
-pub fn backup_key() {
-    let locker_dir = get_locker_dir();
+/// Sauvegarde la clé de chiffrement.
+pub fn backup_key() -> LockerResult<()> {
+    let locker_dir = get_locker_dir()?;
     let key_path = locker_dir.join("locker.key");
     let backup_path = locker_dir.join("locker.key.backup");
 
     if key_path.exists() {
-        fs::copy(&key_path, &backup_path).expect("Erreur lors de la sauvegarde de la clé");
-        println!("✅ Clé sauvegardée avec succès : {:?}", backup_path);
+        fs::copy(&key_path, &backup_path).map_err(|e| {
+            SmartLockerError::FileSystemError(format!("Error backing up key: {}", e))
+        })?;
+        println!("✅ Key backed up successfully: {:?}", backup_path);
     } else {
-        println!("❌ Aucune clé à sauvegarder.");
+        println!("❌ No key to back up.");
     }
+    Ok(())
 }
 
-pub fn restore_key() {
-    let locker_dir = get_locker_dir();
+/// Restaure la clé de chiffrement à partir d'une sauvegarde.
+pub fn restore_key() -> LockerResult<()> {
+    let locker_dir = get_locker_dir()?;
     let key_path = locker_dir.join("locker.key");
     let backup_path = locker_dir.join("locker.key.backup");
 
     if backup_path.exists() {
-        fs::copy(&backup_path, &key_path).expect("Erreur lors de la restauration de la clé");
-        println!("✅ Clé restaurée avec succès : {:?}", key_path);
+        fs::copy(&backup_path, &key_path).map_err(|e| {
+            SmartLockerError::FileSystemError(format!("Error restoring key: {}", e))
+        })?;
+        println!("✅ Key restored successfully: {:?}", key_path);
     } else {
-        println!("❌ Aucune sauvegarde de clé trouvée.");
+        println!("❌ No backup key found.");
     }
+    Ok(())
 }

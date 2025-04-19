@@ -1,4 +1,5 @@
 use thiserror::Error;
+pub type LockerResult<T> = Result<T, SmartLockerError>;
 
 pub mod commands;
 pub use crate::commands::{
@@ -8,3 +9,17 @@ pub mod utils;
 pub use crate::utils::toolbox::{
     backup_key, get_locker_dir, init_locker_with_passphrase, restore_key,
 };
+
+#[derive(Error, Debug)]
+pub enum SmartLockerError {
+    #[error("File system error: {0}")]
+    FileSystemError(String),
+    #[error("Encryption error: {0}")]
+    EncryptionError(String),
+    #[error("Decryption error: {0}")]
+    DecryptionError(String),
+    #[error("Initialization error: {0}")]
+    InitializationError(String),
+    #[error("Unknown error: {0}")]
+    UnknownError(String),
+}

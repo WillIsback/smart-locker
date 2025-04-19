@@ -3,6 +3,35 @@ use smart_locker::utils::toolbox::get_locker_dir;
 use std::fs;
 use std::io::Read;
 
+// Helper function to setup test environment
+fn setup_test_environment() -> std::path::PathBuf {
+    let locker_dir = get_locker_dir().expect("Failed to get locker directory");
+    let key_path = locker_dir.join("locker.key");
+
+    // Create locker directory if it doesn't exist
+    if !locker_dir.exists() {
+        fs::create_dir_all(&locker_dir).expect("Failed to create locker directory");
+    }
+
+    // Create key file if it doesn't exist
+    if !key_path.exists() {
+        let key = vec![0u8; 32];
+        fs::write(&key_path, key).expect("Failed to write key file");
+    }
+
+    locker_dir
+}
+
+// Helper function to clean up test files
+fn cleanup_test_file(filename: &str) {
+    let path = get_locker_dir()
+        .expect("Failed to get locker directory")
+        .join(filename);
+    if path.exists() {
+        fs::remove_file(&path).unwrap_or_else(|e| eprintln!("Cleanup error: {}", e));
+    }
+}
+
 #[test]
 fn test_encrypt_and_decrypt() {
     let locker_dir = setup_test_environment();

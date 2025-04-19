@@ -201,7 +201,7 @@ fn main() {
         let passphrase = matches.get_one::<String>("passphrase").map(|s| s.as_str());
 
         // Appeler init_locker_with_passphrase avec ou sans passphrase
-        init_locker_with_passphrase(passphrase);
+        init_locker_with_passphrase(passphrase).expect("Failed to initialize the vault");
 
         println!("{}", "✅ Vault initialized successfully!".green());
     } else if let Some(matches) = matches.subcommand_matches("encrypt") {
@@ -317,21 +317,21 @@ fn main() {
         }
     } else if let Some(matches) = matches.subcommand_matches("remove") {
         let name = matches.get_one::<String>("name").unwrap();
-        remove_secret(name);
+        remove_secret(name).expect("Failed to delete the secret");
         println!(
             "{}",
             format!("✅ Secret '{}' deleted successfully!", name).green()
         );
     } else if matches.subcommand_matches("backup-key").is_some() {
-        backup_key();
+        backup_key().expect("Failed to create a backup of the encryption key");
         println!("{}", "✅ Encryption key backed up successfully!".green());
     } else if matches.subcommand_matches("restore-key").is_some() {
-        restore_key();
+        restore_key().expect("Failed to restore the encryption key");
         println!("{}", "✅ Encryption key restored successfully!".green());
     } else if let Some(matches) = matches.subcommand_matches("export") {
         let format = matches.get_one::<String>("format").unwrap();
         let output = matches.get_one::<String>("output").map(|s| s.as_str());
-        export(format, output);
+        export(format, output).expect("Failed to export secrets");
     }
 }
 
