@@ -1,7 +1,7 @@
+use crate::commands::list::list_secrets;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
-use crate::commands::list::list_secrets;
 
 pub struct ExportFormat;
 
@@ -9,15 +9,18 @@ impl ExportFormat {
     pub fn export_env_with_placeholders(secret_names: &Vec<String>, output_path: &PathBuf) {
         let mut content = String::new();
         for secret_name in secret_names {
-            content.push_str(&format!("{}=$(smart-locker decrypt -n {})\n", secret_name, secret_name));
+            content.push_str(&format!(
+                "{}=$(smart-locker decrypt -n {})\n",
+                secret_name, secret_name
+            ));
         }
         fs::write(output_path, content).expect("Erreur lors de l'écriture du fichier .env");
     }
 }
 
-
 pub fn export(format: &str, output_file: Option<&str>) {
-    let current_dir: PathBuf = env::current_dir().expect("Impossible de récupérer le répertoire courant");
+    let current_dir: PathBuf =
+        env::current_dir().expect("Impossible de récupérer le répertoire courant");
 
     // Construire le chemin de sortie
     let output_path = match output_file {

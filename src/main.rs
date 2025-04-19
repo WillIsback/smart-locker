@@ -2,9 +2,9 @@
 use clap::{Arg, Command};
 use colored::*; // For colored output
 use smart_locker::commands::{
-    decrypt::decrypt, encrypt::encrypt, list::list_secrets, remove::remove_secret, export::export,
+    decrypt::decrypt, encrypt::encrypt, export::export, list::list_secrets, remove::remove_secret,
 };
-use smart_locker::utils::toolbox::{init_locker_with_passphrase, backup_key, restore_key};
+use smart_locker::utils::toolbox::{backup_key, init_locker_with_passphrase, restore_key};
 use std::io::Read;
 fn main() {
     // Display the logo only for general help
@@ -194,13 +194,13 @@ fn main() {
 
     if let Some(matches) = matches.subcommand_matches("init") {
         display_logo(); // Affiche le logo uniquement pour la commande init
-    
+
         // Récupérer la passphrase si elle est fournie
         let passphrase = matches.get_one::<String>("passphrase").map(|s| s.as_str());
-    
+
         // Appeler init_locker_with_passphrase avec ou sans passphrase
         init_locker_with_passphrase(passphrase);
-    
+
         println!("{}", "✅ Vault initialized successfully!".green());
     } else if let Some(matches) = matches.subcommand_matches("encrypt") {
         let name = matches.get_one::<String>("name").unwrap();
@@ -268,10 +268,10 @@ fn main() {
             "{}",
             format!("✅ Secret '{}' deleted successfully!", name).green()
         );
-    } else if let Some(_) = matches.subcommand_matches("backup-key") {
+    } else if matches.subcommand_matches("backup-key").is_some() {
         backup_key();
         println!("{}", "✅ Encryption key backed up successfully!".green());
-    } else if let Some(_) = matches.subcommand_matches("restore-key") {
+    } else if matches.subcommand_matches("restore-key").is_some() {
         restore_key();
         println!("{}", "✅ Encryption key restored successfully!".green());
     } else if let Some(matches) = matches.subcommand_matches("export") {

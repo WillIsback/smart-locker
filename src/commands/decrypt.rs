@@ -29,7 +29,9 @@ pub fn decrypt(name: &str) -> String {
     let decrypted_data = match cipher.decrypt(nonce, ciphertext) {
         Ok(data) => data,
         Err(_) => {
-            eprintln!("❌ Erreur : La clé de chiffrement est incorrecte ou le fichier est corrompu.");
+            eprintln!(
+                "❌ Erreur : La clé de chiffrement est incorrecte ou le fichier est corrompu."
+            );
             std::process::exit(1); // Quitte le programme avec un code d'erreur
         }
     };

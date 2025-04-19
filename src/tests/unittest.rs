@@ -1,9 +1,7 @@
 use smart_locker::commands::{decrypt, encrypt, list, remove};
-use smart_locker::utils::toolbox::{get_locker_dir};
+use smart_locker::utils::toolbox::get_locker_dir;
 use std::fs;
 use std::io::Read;
-
-
 
 #[test]
 fn test_encrypt_and_decrypt() {
