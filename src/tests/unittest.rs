@@ -1,10 +1,10 @@
-use smart_locker::commands::{decrypt, encrypt, list, remove, export, renew, init};
 use directories::UserDirs;
+use serial_test::serial;
+use smart_locker::commands::{decrypt, encrypt, export, init, list, remove, renew};
+use std::env;
 use std::fs;
 use std::path::PathBuf;
-use std::env;
 use uuid::Uuid;
-use serial_test::serial;
 
 // Helper function to setup and initialize the test environment
 fn setup_and_initialize() -> PathBuf {
@@ -21,9 +21,9 @@ fn setup_and_initialize() -> PathBuf {
         fs::remove_dir_all(test_dir.clone()).unwrap_or_else(|e| {
             eprintln!("Failed to clean up test directory: {}", e);
         });
-    }
-    else {
-        init::init_locker_with_passphrase(None).expect("Failed to initialize locker with passphrase");
+    } else {
+        init::init_locker_with_passphrase(None)
+            .expect("Failed to initialize locker with passphrase");
     }
     test_dir
 }
@@ -92,7 +92,6 @@ fn test_encrypt_and_decrypt() {
     // Nettoyage des variables d'environnement
     cleanup_environment_variables();
 }
-
 
 #[test]
 #[serial]
@@ -164,8 +163,8 @@ fn test_remove_secret() {
     assert!(!test_file.exists(), "Secret file wasn't removed");
 
     // Verify the metadata is gone
-    let metadata = fs::read_to_string(locker_dir.join("metadata.json"))
-        .expect("Failed to read metadata file");
+    let metadata =
+        fs::read_to_string(locker_dir.join("metadata.json")).expect("Failed to read metadata file");
     println!("Metadata after removal: {}", metadata);
     assert!(
         !metadata.contains(test_secret_name),
@@ -188,8 +187,7 @@ fn test_export_secrets() {
     encrypt::encrypt(secret_value, secret_name, tags, None).expect("Failed to encrypt secret");
 
     // Export secrets
-    export::export("env", export_file.to_str())
-        .expect("Failed to export secrets");
+    export::export("env", export_file.to_str()).expect("Failed to export secrets");
 
     // Verify export file exists
     assert!(
@@ -202,7 +200,10 @@ fn test_export_secrets() {
     let exported_content = fs::read_to_string(&export_file).expect("Failed to read export file");
     println!("Exported file content: \n{}", exported_content);
     assert!(
-        exported_content.contains(&format!("{}=$(smart-locker decrypt -n {})", secret_name, secret_name)),
+        exported_content.contains(&format!(
+            "{}=$(smart-locker decrypt -n {})",
+            secret_name, secret_name
+        )),
         "Exported content is incorrect: {}",
         exported_content
     );
@@ -222,8 +223,8 @@ fn test_renew_secret() {
     encrypt::encrypt(secret_value, secret_name, tags, Some(1)).expect("Failed to encrypt secret");
 
     // Print expiration before renewal
-    let metadata = fs::read_to_string(locker_dir.join("metadata.json"))
-        .expect("Failed to read metadata file");
+    let metadata =
+        fs::read_to_string(locker_dir.join("metadata.json")).expect("Failed to read metadata file");
     println!("Metadata before renewal: {}", metadata);
 
     // Renew the secret

@@ -1,9 +1,9 @@
 use crate::commands::migrate::migrate_metadata;
+use crate::utils::config::EncryptionConfig;
 use crate::utils::metadata::{
     has_this_secret_metadata, is_secret_expired, mark_secret_as_expired, read_metadata,
 };
 use crate::utils::toolbox::{get_locker_dir, is_this_secret};
-use crate::utils::config::EncryptionConfig;
 use crate::LockerResult;
 use crate::MetadataFile;
 use crate::SmartLockerError;
@@ -87,7 +87,7 @@ pub fn decrypt(name: &str) -> LockerResult<String> {
             name
         )));
     }
-    
+
     // Lire le fichier chiffré
     let encrypted_data = fs::read(&secret_path).map_err(|_| {
         SmartLockerError::FileSystemError("Unable to read the encrypted file".to_string())
@@ -119,14 +119,14 @@ pub fn decrypt(name: &str) -> LockerResult<String> {
     let key_data = fs::read(&key_path).map_err(|_| {
         SmartLockerError::FileSystemError("Unable to read the symmetric key".to_string())
     })?;
-    let cipher = config.init_cipher(&key_data).map_err(|e| {
-        SmartLockerError::DecryptionError(e)
-    })?;
+    let cipher = config
+        .init_cipher(&key_data)
+        .map_err(|e| SmartLockerError::DecryptionError(e))?;
 
     // Déchiffrer les données
-    let decrypted_data = cipher.decrypt(nonce, ciphertext).map_err(|_| {
-        SmartLockerError::DecryptionError("Decryption failed".to_string())
-    })?;
+    let decrypted_data = cipher
+        .decrypt(nonce, ciphertext)
+        .map_err(|_| SmartLockerError::DecryptionError("Decryption failed".to_string()))?;
 
     // Décompresser les données
     let mut decoder = GzDecoder::new(&decrypted_data[..]);

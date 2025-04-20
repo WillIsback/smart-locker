@@ -2,9 +2,13 @@
 use clap::{Arg, Command};
 use colored::*; // For colored output
 use smart_locker::commands::{
-    decrypt::decrypt, encrypt::encrypt, export::export, list::list_secrets,
-    remove::remove_secret, renew::renew_secret,
-    init::{init_locker_with_passphrase, backup_key, restore_key},
+    decrypt::decrypt,
+    encrypt::encrypt,
+    export::export,
+    init::{backup_key, init_locker_with_passphrase, restore_key},
+    list::list_secrets,
+    remove::remove_secret,
+    renew::renew_secret,
 };
 use smart_locker::utils::toolbox::copy_to_clipboard;
 use std::io::Read;

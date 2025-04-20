@@ -7,8 +7,6 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 
-
-
 /// Vérifie et crée un répertoire s'il n'existe pas.
 pub fn ensure_dir_exists(path: &PathBuf) -> LockerResult<()> {
     if !path.exists() {
@@ -25,7 +23,8 @@ pub fn get_locker_dir() -> LockerResult<PathBuf> {
     // Rechercher une variable d'environnement spécifique au test
     if let Some((_, value)) = env::vars()
         .filter(|(key, _)| key.starts_with("SMART_LOCKER_TEST_DIR_"))
-        .last() // Prend la dernière variable définie
+        .last()
+    // Prend la dernière variable définie
     {
         return Ok(PathBuf::from(value));
     }
@@ -98,5 +97,3 @@ pub fn copy_to_clipboard(content: &str) -> Result<(), String> {
     ctx.set_contents(content.to_string())
         .map_err(|_| "Failed to copy content to the clipboard".to_string())
 }
-
-

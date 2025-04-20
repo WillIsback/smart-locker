@@ -1,11 +1,11 @@
+use crate::utils::metadata::init_metadata_file;
+use crate::utils::toolbox::{ensure_dir_exists, get_locker_dir};
 use crate::LockerResult;
 use crate::SmartLockerError;
-use crate::utils::toolbox::{get_locker_dir, ensure_dir_exists};
-use crate::utils::metadata::init_metadata_file;
-use std::num::NonZeroU32;
-use ring::pbkdf2;
 use colored::Colorize;
+use ring::pbkdf2;
 use std::fs;
+use std::num::NonZeroU32;
 
 pub fn init_locker_with_passphrase(passphrase: Option<&str>) -> Result<(), SmartLockerError> {
     let locker_dir = get_locker_dir()?; // `?` propagates the error as a `Result`
@@ -49,13 +49,10 @@ pub fn init_locker_with_passphrase(passphrase: Option<&str>) -> Result<(), Smart
         init_locker()?; // Call another function that returns `Result`
     }
     // Initialiser le fichier metadata.json
-    init_metadata_file()
-        .expect("Error initializing metadata file");
-    
+    init_metadata_file().expect("Error initializing metadata file");
+
     Ok(()) // Return success
 }
-
-
 
 /// Initialise le répertoire `.locker` et génère une clé symétrique si nécessaire.
 pub fn init_locker() -> LockerResult<()> {
@@ -75,8 +72,6 @@ pub fn init_locker() -> LockerResult<()> {
 
     Ok(())
 }
-
-
 
 /// Génère une clé symétrique aléatoire.
 pub fn generate_key() -> Vec<u8> {

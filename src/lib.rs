@@ -7,16 +7,19 @@ pub type LockerResult<T> = Result<T, SmartLockerError>;
 
 pub mod commands;
 pub use crate::commands::{
-    decrypt::decrypt, encrypt::encrypt, export::export, list::list_secrets,
-    remove::remove_secret, renew::renew_secret, init::{init_locker_with_passphrase,backup_key,restore_key},
+    decrypt::decrypt,
+    encrypt::encrypt,
+    export::export,
+    init::{backup_key, init_locker_with_passphrase, restore_key},
+    list::list_secrets,
+    remove::remove_secret,
+    renew::renew_secret,
 };
 pub mod utils;
 
 pub use crate::utils::config::EncryptionConfig;
 
-pub use crate::utils::toolbox::{
-     get_locker_dir,  copy_to_clipboard,
-};
+pub use crate::utils::toolbox::{copy_to_clipboard, get_locker_dir};
 
 #[derive(Error, Debug)]
 pub enum SmartLockerError {

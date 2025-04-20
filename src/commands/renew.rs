@@ -1,4 +1,7 @@
-use crate::utils::metadata::{has_this_secret_metadata,is_secret_expired, read_metadata, mark_secret_as_expired, update_secret_expiration};
+use crate::utils::metadata::{
+    has_this_secret_metadata, is_secret_expired, mark_secret_as_expired, read_metadata,
+    update_secret_expiration,
+};
 use crate::MetadataFile;
 use crate::SmartLockerError;
 use colored::Colorize;

@@ -1,9 +1,8 @@
-use aes_gcm::{Aes256Gcm, Key, Nonce};
-use aes_gcm::aead::KeyInit;
 use aes_gcm::aead::consts::U12;
+use aes_gcm::aead::KeyInit;
+use aes_gcm::{Aes256Gcm, Key, Nonce};
 use flate2::write::GzEncoder;
 use flate2::Compression;
-
 
 pub const SIGNATURE: &[u8; 8] = b"SMARTLKR"; // Signature fixe pour identifier le format
 pub const FORMAT_VERSION: u8 = 1; // Version actuelle du format
@@ -34,7 +33,8 @@ impl EncryptionConfig {
         if key_data.len() != self.key_size {
             return Err(format!(
                 "Invalid key size: expected {} bytes, got {} bytes",
-                self.key_size, key_data.len()
+                self.key_size,
+                key_data.len()
             ));
         }
         let key = Key::<Aes256Gcm>::from_slice(key_data);

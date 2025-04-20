@@ -1,5 +1,5 @@
-use crate::utils::metadata::{read_metadata, write_metadata};
 use crate::utils::config::EncryptionConfig;
+use crate::utils::metadata::{read_metadata, write_metadata};
 use crate::utils::toolbox::get_locker_dir;
 use crate::MetadataFile;
 use crate::{LockerResult, SecretMetadata, SmartLockerError};
@@ -23,9 +23,9 @@ pub fn encrypt(
     let key_data = fs::read(&key_path).map_err(|e| {
         SmartLockerError::FileSystemError(format!("Unable to read symmetric key: {}", e))
     })?;
-    let cipher = config.init_cipher(&key_data).map_err(|e| {
-        SmartLockerError::EncryptionError(e)
-    })?;
+    let cipher = config
+        .init_cipher(&key_data)
+        .map_err(|e| SmartLockerError::EncryptionError(e))?;
 
     // Générer un nonce aléatoire
     let nonce = config.generate_nonce();
@@ -90,4 +90,3 @@ pub fn encrypt(
     );
     Ok(())
 }
-

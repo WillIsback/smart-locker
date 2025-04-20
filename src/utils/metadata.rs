@@ -7,8 +7,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-
-
 pub fn init_metadata_file() -> Result<(), SmartLockerError> {
     let metadata_path = get_locker_dir()?.join("metadata.json");
     if !metadata_path.exists() {
@@ -56,7 +54,10 @@ pub fn write_metadata(metadata: &MetadataFile) -> Result<(), SmartLockerError> {
     })
 }
 
-pub fn remove_metadata(secret_name: Option<&str>, metadata: &mut MetadataFile) -> Result<(), SmartLockerError> {
+pub fn remove_metadata(
+    secret_name: Option<&str>,
+    metadata: &mut MetadataFile,
+) -> Result<(), SmartLockerError> {
     match secret_name {
         Some(name) => {
             if metadata.secrets.remove(name).is_some() {
@@ -165,5 +166,4 @@ pub fn update_secret_expiration(
         secret_metadata.expire_at = new_expiration;
         secret_metadata.expired = false; // Marquer comme non expiré
     })
-
 }

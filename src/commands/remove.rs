@@ -22,7 +22,10 @@ pub fn remove_secret(name: Option<&str>, remove_all: bool) -> Result<(), SmartLo
             let file_path = locker_dir.join(format!("{}.slock", secret_name));
             if file_path.exists() {
                 fs::remove_file(&file_path).map_err(|e| {
-                    SmartLockerError::FileSystemError(format!("Error when deleting the file: {}", e))
+                    SmartLockerError::FileSystemError(format!(
+                        "Error when deleting the file: {}",
+                        e
+                    ))
                 })?;
             }
         }
@@ -39,7 +42,10 @@ pub fn remove_secret(name: Option<&str>, remove_all: bool) -> Result<(), SmartLo
             })?;
             // Supprimer les métadonnées associées
             remove_metadata(Some(secret_name), &mut metadata)?;
-            println!("Secret '{}' and its metadata have been successfully deleted.", secret_name);
+            println!(
+                "Secret '{}' and its metadata have been successfully deleted.",
+                secret_name
+            );
         } else {
             println!("Secret '{}' doesn't exist.", secret_name);
         }
