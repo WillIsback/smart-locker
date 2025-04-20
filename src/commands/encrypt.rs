@@ -25,7 +25,7 @@ pub fn encrypt(
     })?;
     let cipher = config
         .init_cipher(&key_data)
-        .map_err(|e| SmartLockerError::EncryptionError(e))?;
+        .map_err(SmartLockerError::EncryptionError)?;
 
     // Générer un nonce aléatoire
     let nonce = config.generate_nonce();

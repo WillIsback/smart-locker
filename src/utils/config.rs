@@ -17,6 +17,12 @@ pub struct EncryptionConfig {
     pub compression: Compression,
 }
 
+impl Default for EncryptionConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EncryptionConfig {
     pub fn new() -> Self {
         Self {
@@ -44,7 +50,7 @@ impl EncryptionConfig {
     /// Génère un nonce aléatoire
     pub fn generate_nonce(&self) -> Nonce<U12> {
         let random_bytes = rand::random::<[u8; NONCE_SIZE]>();
-        Nonce::<U12>::from_slice(&random_bytes).clone()
+        *Nonce::<U12>::from_slice(&random_bytes)
     }
 
     /// Initialise un compresseur Gzip

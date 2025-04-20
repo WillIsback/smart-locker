@@ -6,6 +6,7 @@ use directories::UserDirs;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use std::path::Path;
 
 /// Vérifie et crée un répertoire s'il n'existe pas.
 pub fn ensure_dir_exists(path: &PathBuf) -> LockerResult<()> {
@@ -63,7 +64,7 @@ pub fn get_locker_dir() -> LockerResult<PathBuf> {
 ///     println!("Secret valid: {}", secret_name.unwrap());
 /// }
 /// ```
-pub fn is_this_secret(file_path: &PathBuf, silent: bool) -> (bool, Option<String>) {
+pub fn is_this_secret(file_path: &Path, silent: bool) -> (bool, Option<String>) {
     if file_path.extension().and_then(|ext| ext.to_str()) == Some("slock") {
         if let Some(secret_name) = file_path.file_stem().and_then(|stem| stem.to_str()) {
             return (true, Some(secret_name.to_string()));

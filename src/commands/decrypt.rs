@@ -121,7 +121,7 @@ pub fn decrypt(name: &str) -> LockerResult<String> {
     })?;
     let cipher = config
         .init_cipher(&key_data)
-        .map_err(|e| SmartLockerError::DecryptionError(e))?;
+        .map_err(SmartLockerError::DecryptionError)?;
 
     // Déchiffrer les données
     let decrypted_data = cipher
