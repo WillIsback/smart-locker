@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.6] - 2025-04-20
+
+### ⚙️ Miscellaneous Tasks
+
+- Remove changelog generation step from release workflow
+- Release smart-locker version 0.2.6
+
+## [0.2.5] - 2025-04-20
+
+### ⚙️ Miscellaneous Tasks
+
+- Update CI/CD workflow and configuration for improved release process
+- Add initialization step to build and test process
+- Add release-check.sh to .gitignore
+- Release smart-locker version 0.2.4
+- Release smart-locker version 0.2.5
+
+## [0.2.3] - 2025-04-20
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for version v0.2.2
+- Release smart-locker version 0.2.3
+
 ## [0.2.2] - 2025-04-19
 
 ### ⚙️ Miscellaneous Tasks

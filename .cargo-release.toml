@@ -1,4 +1,4 @@
-pre-release-hook = ["./scripts/pre-release-hook.sh"]
+pre-release-hook = ["./ci/pre-release-hook.sh"]
 
 
 [release]
