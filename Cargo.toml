@@ -47,12 +47,14 @@ aes-gcm = "0.10"       # Chiffrement AES-GCM
 rand = "0.9"           # Génération de nombres aléatoires
 clap = { version = "4.0", features = ["derive"] } # Gestion des arguments CLI
 serde = { version = "1.0", features = ["derive"] } # Sérialisation/Désérialisation
+serde_json = "1.0"     # Format JSON pour la sérialisation
 directories = "6.0"    # Gestion des chemins spécifiques à l'utilisateur
 ring = "0.17.14"
 copypasta = "0.10.1"
 colored = "3.0"
 flate2 = "1.0"
 thiserror = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
 
 [features]
 default = []

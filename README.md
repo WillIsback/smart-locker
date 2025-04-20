@@ -31,10 +31,12 @@ MAIN COMMANDS:
 
 EXAMPLE:
   smart-locker encrypt -n openai_token -v sk-abc123...
+  smart-locker encrypt -n my_secret -v "my value" --tags "tag1,tag2"
   smart-locker decrypt -n openai_token
   smart-locker backup-key
   smart-locker restore-key
   smart-locker export --format env --output .env
+  
 ```
 
 ADVANCED:

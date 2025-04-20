@@ -27,6 +27,7 @@ fn main() {
         - encrypt: Encrypts a secret and saves it in the vault.\n\
             --name: Name of the secret.\n\
             --value: Value of the secret to encrypt.\n\
+            --tags: Comma-separated tags for the secret (e.g., tag1,tag2).\n\
             If --value is not provided, the value will be read from stdin.\n\n\
         - decrypt: Decrypts a secret.\n\
             --name: Name of the secret to decrypt.\n\
@@ -88,6 +89,8 @@ fn main() {
                 EXAMPLES:\n\
                 - Encrypt a secret with a value:\n\
                   smart-locker encrypt -n my_secret -v \"my value\"\n\
+                - Encrypt a secret with tags:\n\
+                  smart-locker encrypt -n my_secret -v \"my value\" --tags \"tag1,tag2\"\n\
                 - Encrypt a secret by reading the value from stdin:\n\
                   echo \"my value\" | smart-locker encrypt -n my_secret",
                 )
@@ -106,6 +109,14 @@ fn main() {
                         .num_args(1)
                         .required(false)
                         .help("Value of the secret to encrypt"),
+                )
+                .arg(
+                    Arg::new("tags")
+                        .short('t')
+                        .long("tags")
+                        .num_args(1)
+                        .required(false)
+                        .help("Comma-separated tags for the secret (e.g., tag1,tag2)"),
                 ),
         )
         .subcommand(
@@ -220,7 +231,12 @@ fn main() {
             }
         };
 
-        match encrypt(&value, name) {
+        let tags = matches
+            .get_one::<String>("tags")
+            .map(|t| t.split(',').map(|s| s.trim().to_string()).collect())
+            .unwrap_or_else(Vec::new);
+
+        match encrypt(&value, name, tags) {
             Ok(_) => println!(
                 "{}",
                 format!("✅ Secret '{}' encrypted successfully!", name).green()

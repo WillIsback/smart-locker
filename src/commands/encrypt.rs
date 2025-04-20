@@ -7,8 +7,19 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use std::fs;
 use std::io::Write;
+use serde::{Deserialize, Serialize};
+use serde_json;
+use std::time::{SystemTime, UNIX_EPOCH};
 
-pub fn encrypt(secret: &str, name: &str) -> Result<(), SmartLockerError> {
+#[derive(Serialize, Deserialize)]
+struct SecretMetadata {
+    name: String,
+    created_at: u64,
+    modified_at: u64,
+    tags: Vec<String>,
+}
+
+pub fn encrypt(secret: &str, name: &str, tags: Vec<String>) -> Result<(), SmartLockerError> {
     let locker_dir = get_locker_dir()?;
     let key_path = locker_dir.join("locker.key");
 
@@ -42,6 +53,23 @@ pub fn encrypt(secret: &str, name: &str) -> Result<(), SmartLockerError> {
     fs::write(&output_path, output_data).map_err(|e| {
         SmartLockerError::FileSystemError(format!("Error when writing encrypted file: {}", e))
     })?;
+
+    // Save metadata
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+    let metadata = SecretMetadata {
+        name: name.to_string(),
+        created_at: now,
+        modified_at: now,
+        tags,
+    };
+    let metadata_path = locker_dir.join(format!("{}.meta.json", name));
+    let metadata_json = serde_json::to_string(&metadata).map_err(|e| {
+        SmartLockerError::FileSystemError(format!("Error serializing metadata: {}", e))
+    })?;
+    fs::write(&metadata_path, metadata_json).map_err(|e| {
+        SmartLockerError::FileSystemError(format!("Error writing metadata file: {}", e))
+    })?;
+
     println!("✅ Secret encrypted and saved in: {:?}", output_path);
 
     Ok(())
