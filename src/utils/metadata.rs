@@ -1,10 +1,10 @@
+use crate::utils::toolbox::get_locker_dir;
 use crate::MetadataFile;
 use crate::SecretMetadata;
 use crate::SmartLockerError;
-use crate::utils::toolbox::get_locker_dir;
+use colored::Colorize;
 use std::collections::HashMap;
 use std::fs;
-use colored::Colorize;
 
 pub fn read_metadata() -> Result<MetadataFile, SmartLockerError> {
     let locker_dir = get_locker_dir()?;
@@ -23,9 +23,7 @@ pub fn read_metadata() -> Result<MetadataFile, SmartLockerError> {
     })
 }
 
-pub fn write_metadata(
-    metadata: &MetadataFile,
-) -> Result<(), SmartLockerError> {
+pub fn write_metadata(metadata: &MetadataFile) -> Result<(), SmartLockerError> {
     let locker_dir = get_locker_dir()?;
     let metadata_path = locker_dir.join("metadata.json");
     let content = serde_json::to_string_pretty(metadata).map_err(|e| {

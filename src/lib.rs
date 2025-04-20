@@ -7,8 +7,8 @@ pub type LockerResult<T> = Result<T, SmartLockerError>;
 
 pub mod commands;
 pub use crate::commands::{
-    decrypt::decrypt, encrypt::encrypt, export::export, list::list_secrets, remove::remove_secret,
-    renew::renew_secret, migrate::migrate_metadata,
+    decrypt::decrypt, encrypt::encrypt, export::export, list::list_secrets,
+    migrate::migrate_metadata, remove::remove_secret, renew::renew_secret,
 };
 pub mod utils;
 pub use crate::utils::toolbox::{
@@ -68,4 +68,3 @@ impl SecretMetadata {
 pub struct MetadataFile {
     pub secrets: HashMap<String, SecretMetadata>, // Clé : nom du secret
 }
-

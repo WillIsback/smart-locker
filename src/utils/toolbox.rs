@@ -196,11 +196,7 @@ pub fn is_this_secret(file_path: &PathBuf, silent: bool) -> (bool, Option<String
         } else if !silent {
             println!(
                 "{}",
-                format!(
-                    "⚠️ Invalid secret file name '{}'.",
-                    file_path.display()
-                )
-                .yellow()
+                format!("⚠️ Invalid secret file name '{}'.", file_path.display()).yellow()
             );
         }
         (false, None)

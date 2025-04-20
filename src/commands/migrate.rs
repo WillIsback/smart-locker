@@ -1,9 +1,9 @@
 use crate::utils::metadata::{read_metadata, write_metadata};
 use crate::utils::toolbox::get_locker_dir;
+use crate::SmartLockerError;
 use crate::{MetadataFile, SecretMetadata};
 use chrono::Utc;
 use std::fs;
-use crate::SmartLockerError;
 
 pub fn migrate_metadata(name: Option<&str>) -> Result<(), SmartLockerError> {
     let locker_dir = get_locker_dir()?;
@@ -46,15 +46,15 @@ pub fn migrate_metadata(name: Option<&str>) -> Result<(), SmartLockerError> {
 
             // Vérifier si le fichier est un secret .slock
             if path.extension().and_then(|ext| ext.to_str()) == Some("slock") {
-                let secret_name = path
-                    .file_stem()
-                    .and_then(|stem| stem.to_str())
-                    .ok_or_else(|| {
-                        SmartLockerError::FileSystemError(format!(
-                            "Invalid secret file name '{}'",
-                            path.display()
-                        ))
-                    })?;
+                let secret_name =
+                    path.file_stem()
+                        .and_then(|stem| stem.to_str())
+                        .ok_or_else(|| {
+                            SmartLockerError::FileSystemError(format!(
+                                "Invalid secret file name '{}'",
+                                path.display()
+                            ))
+                        })?;
 
                 // Créer ou mettre à jour les métadonnées pour ce secret
                 metadata.secrets.insert(

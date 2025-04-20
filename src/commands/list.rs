@@ -1,6 +1,6 @@
-use crate::utils::toolbox::{get_locker_dir, is_this_secret};
-use crate::utils::metadata::{read_metadata, has_this_secret_metadata};
 use crate::commands::migrate::migrate_metadata;
+use crate::utils::metadata::{has_this_secret_metadata, read_metadata};
+use crate::utils::toolbox::{get_locker_dir, is_this_secret};
 use crate::MetadataFile;
 use crate::SmartLockerError;
 use chrono::DateTime;
@@ -63,7 +63,10 @@ pub fn list_secrets() -> Result<Vec<String>, SmartLockerError> {
                 );
                 migrate_metadata(Some(&secret_name))?; // Appel à migrate_metadata pour chaque secret
             }
-            println!("{}", "✅ Metadata migration completed successfully.".green());
+            println!(
+                "{}",
+                "✅ Metadata migration completed successfully.".green()
+            );
             metadata = read_metadata()?; // Relire les métadonnées après migration
         } else {
             println!("{}", "⚠️ Migration skipped.".yellow());
@@ -73,12 +76,12 @@ pub fn list_secrets() -> Result<Vec<String>, SmartLockerError> {
     // Afficher les secrets
     for (name, secret) in metadata.secrets.iter() {
         let created_at = DateTime::from_timestamp(secret.created_at as i64, 0)
-        .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
-        .unwrap_or_else(|| "Invalid timestamp".to_string());
+            .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+            .unwrap_or_else(|| "Invalid timestamp".to_string());
 
         let expire_at = DateTime::from_timestamp(secret.expire_at as i64, 0)
-        .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
-        .unwrap_or_else(|| "Invalid timestamp".to_string());
+            .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+            .unwrap_or_else(|| "Invalid timestamp".to_string());
 
         secrets.push(format!(
             "{}\n  Created At: {}  Expire At: {}  Status: {}  Tags: {:?}",

@@ -1,5 +1,5 @@
-use crate::utils::toolbox::get_locker_dir;
 use crate::utils::metadata::{read_metadata, write_metadata};
+use crate::utils::toolbox::get_locker_dir;
 use crate::LockerResult;
 use crate::SecretMetadata;
 use crate::SmartLockerError;

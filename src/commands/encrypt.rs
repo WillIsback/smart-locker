@@ -1,6 +1,6 @@
-use crate::utils::toolbox::get_locker_dir;
 use crate::utils::metadata::{read_metadata, write_metadata};
-use crate::{SecretMetadata, LockerResult, SmartLockerError};
+use crate::utils::toolbox::get_locker_dir;
+use crate::{LockerResult, SecretMetadata, SmartLockerError};
 use aes_gcm::aead::Aead;
 use aes_gcm::KeyInit;
 use aes_gcm::{Aes256Gcm, Key, Nonce};
