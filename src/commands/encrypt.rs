@@ -1,14 +1,14 @@
 use crate::utils::metadata::{read_metadata, write_metadata};
 use crate::utils::toolbox::get_locker_dir;
-use crate::{LockerResult, SecretMetadata, SmartLockerError};
 use crate::MetadataFile;
+use crate::{LockerResult, SecretMetadata, SmartLockerError};
 use aes_gcm::aead::{Aead, KeyInit};
 use aes_gcm::{Aes256Gcm, Key, Nonce};
+use colored::Colorize;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use std::fs;
 use std::io::Write;
-use colored::Colorize;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn encrypt(

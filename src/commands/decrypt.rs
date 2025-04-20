@@ -1,17 +1,18 @@
-use crate::utils::metadata::{read_metadata, has_this_secret_metadata, is_secret_expired, mark_secret_as_expired};
-use crate::utils::toolbox::{get_locker_dir, is_this_secret};
 use crate::commands::migrate::migrate_metadata;
-use crate::MetadataFile;
+use crate::utils::metadata::{
+    has_this_secret_metadata, is_secret_expired, mark_secret_as_expired, read_metadata,
+};
+use crate::utils::toolbox::{get_locker_dir, is_this_secret};
 use crate::LockerResult;
-use colored::Colorize;
+use crate::MetadataFile;
 use crate::SmartLockerError;
 use aes_gcm::aead::Aead;
 use aes_gcm::KeyInit;
 use aes_gcm::{Aes256Gcm, Key, Nonce};
+use colored::Colorize;
 use flate2::read::GzDecoder;
 use std::fs;
 use std::io::{self, Read, Write};
-
 
 pub fn decrypt(name: &str) -> LockerResult<String> {
     let locker_dir = get_locker_dir()?;
@@ -56,7 +57,10 @@ pub fn decrypt(name: &str) -> LockerResult<String> {
                 format!("Migrating metadata for secret '{}'...", name).blue()
             );
             migrate_metadata(Some(name))?;
-            println!("{}", "✅ Metadata migration completed successfully.".green());
+            println!(
+                "{}",
+                "✅ Metadata migration completed successfully.".green()
+            );
             metadata = read_metadata()?; // Relire les métadonnées après migration
         } else {
             return Err(SmartLockerError::DecryptionError(format!(
@@ -102,16 +106,13 @@ pub fn decrypt(name: &str) -> LockerResult<String> {
     let (nonce, ciphertext) = encrypted_data.split_at(12);
     let nonce = Nonce::from_slice(nonce);
 
-
     // Déchiffrer les données
-    let decrypted_data = cipher
-    .decrypt(nonce, ciphertext)
-    .map_err(|_| {
+    let decrypted_data = cipher.decrypt(nonce, ciphertext).map_err(|_| {
         println!("DEBUG: Decryption failed.");
         SmartLockerError::DecryptionError("Decryption failed".to_string())
     })?;
     println!("DEBUG: Decrypted data (raw): {:?}", decrypted_data);
-    
+
     // Décompresser les données
     let mut decoder = GzDecoder::new(&decrypted_data[..]);
     let mut decompressed_data = String::new();
@@ -121,7 +122,10 @@ pub fn decrypt(name: &str) -> LockerResult<String> {
             println!("DEBUG: Decompression failed.");
             SmartLockerError::FileSystemError("Failed to decompress the data".to_string())
         })?;
-    println!("DEBUG: Decompressed data length: {}", decompressed_data.len());
+    println!(
+        "DEBUG: Decompressed data length: {}",
+        decompressed_data.len()
+    );
     println!("DEBUG: Decompressed data: {}", decompressed_data);
     Ok(decompressed_data)
 }

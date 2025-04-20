@@ -5,7 +5,9 @@ use smart_locker::commands::{
     decrypt::decrypt, encrypt::encrypt, export::export, list::list_secrets,
     migrate::migrate_metadata, remove::remove_secret, renew::renew_secret,
 };
-use smart_locker::utils::toolbox::{backup_key, init_locker_with_passphrase, restore_key, copy_to_clipboard};
+use smart_locker::utils::toolbox::{
+    backup_key, copy_to_clipboard, init_locker_with_passphrase, restore_key,
+};
 use std::io::Read;
 use std::process::exit;
 
@@ -310,7 +312,7 @@ fn main() {
         }
     } else if let Some(matches) = matches.subcommand_matches("decrypt") {
         let name = matches.get_one::<String>("name").expect("Name is required");
-    
+
         match decrypt(name) {
             Ok(decrypted_value) => {
                 println!("DEBUG: Decrypted value: {}", decrypted_value); // Log temporaire

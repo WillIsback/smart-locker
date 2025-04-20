@@ -7,7 +7,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-
 pub fn read_metadata() -> Result<MetadataFile, SmartLockerError> {
     let locker_dir = get_locker_dir()?;
     let metadata_path = locker_dir.join("metadata.json");
@@ -55,7 +54,6 @@ where
         )))
     }
 }
-
 
 pub fn has_metadata_file() -> bool {
     let locker_dir = get_locker_dir().unwrap();
