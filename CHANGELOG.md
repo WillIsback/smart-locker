@@ -4,6 +4,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2025-04-20
+
+### 🚜 Refactor
+
+- Simplify cleanup_test_directory function by removing unnecessary PathBuf variable
+
 ## [0.3.0] - 2025-04-20
 
 ### 🚀 Features
@@ -32,6 +38,14 @@ All notable changes to this project will be documented in this file.
 - Reorder import statements for improved clarity and consistency
 - Remove unnecessary blank line in is_this_secret function; ensure consistent formatting
 - Add Debug trait to SecretMetadata and MetadataFile structs for improved logging and debugging
+
+### 📚 Documentation
+
+- Mise à jour du changelog pour la version 0.3.0
+
+### ⚙️ Miscellaneous Tasks
+
+- Release smart-locker version 0.3.0
 
 ## [0.2.12] - 2025-04-20
 
