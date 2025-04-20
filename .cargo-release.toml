@@ -1,6 +1,3 @@
-pre-release-hook = ["./ci/pre-release-hook.sh"]
-
-
 [release]
 sign-commit = false
 sign-tag = false
