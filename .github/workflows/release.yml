@@ -57,7 +57,8 @@ jobs:
 
       - name: 📦 Build .deb & .rpm
         run: |
-          cargo deb --fast
+          cargo build --release
+          cargo deb --fast --deb-version "${{ github.ref_name }}"
           cargo generate-rpm
 
       - name: 📤 Create GitHub Release
