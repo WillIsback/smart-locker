@@ -4,11 +4,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.12] - 2025-04-20
+
+### 🐛 Bug Fixes
+
+- Correct version extraction and update asset naming in release workflow
+
 ## [0.2.11] - 2025-04-20
 
 ### 🐛 Bug Fixes
 
 - Update version extraction in release workflow and improve changelog formatting
+
+### 📚 Documentation
+
+- Mise à jour du changelog pour la version 0.2.11
+
+### ⚙️ Miscellaneous Tasks
+
+- Release smart-locker version 0.2.11
 
 ## [0.2.10] - 2025-04-20
 
