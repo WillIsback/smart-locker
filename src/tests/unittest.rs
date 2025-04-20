@@ -40,17 +40,14 @@ fn cleanup_environment_variables() {
 #[cfg(test)]
 mod cleanup {
     use std::fs;
-    use std::path::PathBuf;
 
     /// Nettoie tout le dossier `test` après l'exécution de tous les tests.
     #[ctor::dtor]
     fn cleanup_test_directory() {
-        let test_dir = PathBuf::from(
-            directories::UserDirs::new()
-                .expect("Failed to get user directories")
-                .home_dir()
-                .join(".locker/test"),
-        );
+        let test_dir = directories::UserDirs::new()
+            .expect("Failed to get user directories")
+            .home_dir()
+            .join(".locker/test");
 
         if test_dir.exists() {
             fs::remove_dir_all(&test_dir).unwrap_or_else(|e| {
