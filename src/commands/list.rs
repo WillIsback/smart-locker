@@ -41,12 +41,12 @@ pub fn list_secrets() -> Result<Vec<String>, SmartLockerError> {
 
                         // Convert timestamps to human-readable format
                         let created_at = DateTime::from_timestamp(metadata.created_at as i64, 0)
-                            .unwrap_or_else(|| Utc::now())
+                            .unwrap_or_else(Utc::now)
                             .format("%Y-%m-%d %H:%M:%S")
                             .to_string();
 
                         let modified_at = DateTime::from_timestamp(metadata.modified_at as i64, 0)
-                            .unwrap_or_else(|| Utc::now())
+                            .unwrap_or_else(Utc::now)
                             .format("%Y-%m-%d %H:%M:%S")
                             .to_string();
 
