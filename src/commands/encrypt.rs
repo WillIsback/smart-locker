@@ -5,10 +5,10 @@ use aes_gcm::KeyInit;
 use aes_gcm::{Aes256Gcm, Key, Nonce};
 use flate2::write::GzEncoder;
 use flate2::Compression;
-use std::fs;
-use std::io::Write;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use std::fs;
+use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Serialize, Deserialize)]
@@ -55,7 +55,10 @@ pub fn encrypt(secret: &str, name: &str, tags: Vec<String>) -> Result<(), SmartL
     })?;
 
     // Save metadata
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
     let metadata = SecretMetadata {
         name: name.to_string(),
         created_at: now,

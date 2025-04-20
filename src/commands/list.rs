@@ -1,9 +1,8 @@
-use chrono::{DateTime, Utc}; // Ajout pour le formatage des dates
 use crate::utils::toolbox::get_locker_dir;
 use crate::SmartLockerError;
-use std::fs;
+use chrono::{DateTime, Utc}; // Ajout pour le formatage des dates
 use colored::Colorize;
-
+use std::fs;
 
 use serde::Deserialize;
 
@@ -41,27 +40,21 @@ pub fn list_secrets() -> Result<Vec<String>, SmartLockerError> {
                             })?;
 
                         // Convert timestamps to human-readable format
-                        let created_at = DateTime::from_timestamp(
-                            metadata.created_at as i64,
-                            0,
-                        )
-                        .unwrap_or_else(|| Utc::now())
-                        .format("%Y-%m-%d %H:%M:%S")
-                        .to_string();
+                        let created_at = DateTime::from_timestamp(metadata.created_at as i64, 0)
+                            .unwrap_or_else(|| Utc::now())
+                            .format("%Y-%m-%d %H:%M:%S")
+                            .to_string();
 
-                        let modified_at = DateTime::from_timestamp(
-                            metadata.modified_at as i64,
-                            0,
-                        )
-                        .unwrap_or_else(|| Utc::now())
-                        .format("%Y-%m-%d %H:%M:%S")
-                        .to_string();
+                        let modified_at = DateTime::from_timestamp(metadata.modified_at as i64, 0)
+                            .unwrap_or_else(|| Utc::now())
+                            .format("%Y-%m-%d %H:%M:%S")
+                            .to_string();
 
                         secrets.push(format!(
                             "Name: {}\n Created At: {}, Modified At: {}, Tags: {:?}",
                             metadata.name.green(),
-                            created_at, 
-                            modified_at, 
+                            created_at,
+                            modified_at,
                             metadata.tags
                         ));
                     }

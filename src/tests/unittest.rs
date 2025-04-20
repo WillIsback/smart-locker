@@ -42,10 +42,7 @@ fn test_encrypt_and_decrypt() {
 
     // Ensure the test file doesn't exist before starting
     cleanup_test_file(&format!("{}.slock", secret_name));
-    let tags: Vec<String> = ["test1", "test2"]
-        .iter()
-        .map(|&s| s.to_string())
-        .collect();
+    let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
     // Encrypt the secret
     encrypt::encrypt(secret_value, secret_name, tags).expect("Failed to encrypt secret");
 
@@ -129,10 +126,7 @@ fn test_encrypt_with_stdin() {
         .read_to_string(&mut input)
         .expect("Failed to read from mock stdin");
 
-    let tags: Vec<String> = ["test1", "test2"]
-        .iter()
-        .map(|&s| s.to_string())
-        .collect();
+    let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
     // Encrypt using simulated input
     encrypt::encrypt(&input, secret_name, tags).expect("Failed to encrypt from stdin");
 
@@ -158,10 +152,7 @@ fn test_decrypt_with_stdout() {
     // Ensure clean state
     cleanup_test_file(&format!("{}.slock", secret_name));
 
-    let tags: Vec<String> = ["test1", "test2"]
-    .iter()
-    .map(|&s| s.to_string())
-    .collect();
+    let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
 
     // Encrypt the secret
     encrypt::encrypt(secret_value, secret_name, tags).expect("Failed to encrypt secret");
@@ -197,10 +188,7 @@ fn test_decrypt_with_clipboard() {
     // Ensure clean state
     cleanup_test_file(&format!("{}.slock", secret_name));
 
-    let tags: Vec<String> = ["test1", "test2"]
-    .iter()
-    .map(|&s| s.to_string())
-    .collect();
+    let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
 
     // Encrypt the secret
     encrypt::encrypt(secret_value, secret_name, tags).expect("Failed to encrypt secret");
