@@ -1,12 +1,28 @@
+<!-- markdownlint-disable -->
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [0.2.11] - 2025-04-20
+
+### 🐛 Bug Fixes
+
+- Update version extraction in release workflow and improve changelog formatting
 
 ## [0.2.10] - 2025-04-20
 
 ### 🐛 Bug Fixes
 
 - *(release)* Extract version from tag and update .deb/.rpm build steps
+
+### 📚 Documentation
+
+- Mise à jour du changelog pour la version 0.2.10
+
+### ⚙️ Miscellaneous Tasks
+
+- Release smart-locker version 0.2.10
 
 ## [0.2.9] - 2025-04-20
 
