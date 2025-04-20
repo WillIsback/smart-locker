@@ -1,6 +1,6 @@
 [package]
 name = "smart-locker"
-version = "0.2.9"
+version = "0.2.10"
 authors = ["William"]
 edition = "2021"
 license = "MIT"
