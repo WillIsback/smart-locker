@@ -9,11 +9,19 @@ pub const FORMAT_VERSION: u8 = 1; // Version actuelle du format
 pub const NONCE_SIZE: usize = 12; // Taille du nonce (12 octets pour AES-GCM)
 pub const KEY_SIZE: usize = 32; // Taille de la clé symétrique (32 octets pour AES-256)
 
+/// Configuration structure for encryption settings.
+/// This structure defines the parameters used for AES-GCM encryption,
+/// including the signature, format version, nonce size, key size, and compression settings.
 pub struct EncryptionConfig {
+    /// Fixed signature to identify the format.
     pub signature: &'static [u8; 8],
+    /// Current version of the format.
     pub format_version: u8,
+    /// Size of the nonce (12 bytes for AES-GCM).
     pub nonce_size: usize,
+    /// Size of the symmetric key (32 bytes for AES-256).
     pub key_size: usize,
+    /// Compression level for Gzip.
     pub compression: Compression,
 }
 
@@ -24,6 +32,7 @@ impl Default for EncryptionConfig {
 }
 
 impl EncryptionConfig {
+    /// Creates a new instance of the encryption configuration with default values.
     pub fn new() -> Self {
         Self {
             signature: SIGNATURE,
@@ -34,7 +43,14 @@ impl EncryptionConfig {
         }
     }
 
-    /// Initialise le chiffreur AES-GCM avec une clé donnée
+    /// Initializes the AES-GCM cipher with the provided key.
+    ///
+    /// # Arguments
+    /// * `key_data` - A byte slice containing the encryption key.
+    ///
+    /// # Returns
+    /// * `Ok(Aes256Gcm)` - The initialized AES-GCM cipher.
+    /// * `Err(String)` - An error message if the key size is invalid.
     pub fn init_cipher(&self, key_data: &[u8]) -> Result<Aes256Gcm, String> {
         if key_data.len() != self.key_size {
             return Err(format!(
@@ -47,13 +63,19 @@ impl EncryptionConfig {
         Ok(Aes256Gcm::new(key))
     }
 
-    /// Génère un nonce aléatoire
+    /// Generates a random nonce for AES-GCM encryption.
+    ///
+    /// # Returns
+    /// * `Nonce<U12>` - A randomly generated nonce of 12 bytes.
     pub fn generate_nonce(&self) -> Nonce<U12> {
         let random_bytes = rand::random::<[u8; NONCE_SIZE]>();
         *Nonce::<U12>::from_slice(&random_bytes)
     }
 
-    /// Initialise un compresseur Gzip
+    /// Initializes a Gzip compressor with the specified compression level.
+    ///
+    /// # Returns
+    /// * `GzEncoder<Vec<u8>>` - A Gzip encoder for compressing data.
     pub fn init_compressor(&self) -> GzEncoder<Vec<u8>> {
         GzEncoder::new(Vec::new(), self.compression)
     }

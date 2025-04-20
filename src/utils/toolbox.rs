@@ -9,6 +9,31 @@ use std::path::Path;
 use std::path::PathBuf;
 
 /// Vérifie et crée un répertoire s'il n'existe pas.
+///
+/// # Arguments
+///
+/// * `path` - Le chemin du répertoire à vérifier ou à créer.
+///
+/// # Retourne
+///
+/// * `LockerResult<()>` - Un résultat indiquant si l'opération a réussi ou non.
+///
+/// # Exemple
+///
+/// ```rust
+/// use std::path::PathBuf;
+/// use smart_locker::utils::toolbox::ensure_dir_exists;
+///
+/// let path = PathBuf::from("/tmp/my_locker");
+/// ensure_dir_exists(&path).expect("Failed to create directory");
+/// ```
+///
+/// Ce code crée le répertoire `/tmp/my_locker` s'il n'existe pas déjà.
+///
+/// # Notes
+///
+/// Si le répertoire existe déjà, la fonction ne fait rien.
+/// Si une erreur se produit, elle retourne un `SmartLockerError`.
 pub fn ensure_dir_exists(path: &PathBuf) -> LockerResult<()> {
     if !path.exists() {
         fs::create_dir_all(path).map_err(|e| {
@@ -20,6 +45,26 @@ pub fn ensure_dir_exists(path: &PathBuf) -> LockerResult<()> {
 }
 
 /// Retourne le chemin du répertoire `.locker`.
+///
+/// # Retourne
+///
+/// * `LockerResult<PathBuf>` - Le chemin du répertoire `.locker`.
+///
+/// # Exemple
+///
+/// ```rust
+/// use smart_locker::utils::toolbox::get_locker_dir;
+///
+/// let locker_dir = get_locker_dir().expect("Failed to get locker directory");
+/// println!("Locker directory: {:?}", locker_dir);
+/// ```
+///
+/// Ce code retourne le chemin du répertoire `.locker`, qui est soit défini par une variable d'environnement, soit par défaut dans le répertoire utilisateur.
+///
+/// # Notes
+///
+/// Si une variable d'environnement `SMART_LOCKER_TEST_DIR` ou `SMART_LOCKER_TEST_DIR_*` est définie, elle sera utilisée comme chemin.
+/// Sinon, le répertoire par défaut est `~/.locker`.
 pub fn get_locker_dir() -> LockerResult<PathBuf> {
     // Rechercher une variable d'environnement spécifique au test
     if let Some((_, value)) = env::vars()
@@ -58,12 +103,21 @@ pub fn get_locker_dir() -> LockerResult<PathBuf> {
 /// ```rust
 /// use std::path::PathBuf;
 /// use smart_locker::utils::toolbox::is_this_secret;
+///
 /// let file_path = PathBuf::from("example.slock");
 /// let (is_valid, secret_name) = is_this_secret(&file_path, false);
 /// if is_valid {
 ///     println!("Secret valid: {}", secret_name.unwrap());
+/// } else {
+///     println!("Invalid secret file.");
 /// }
 /// ```
+///
+/// Ce code vérifie si `example.slock` est un fichier secret valide et affiche son nom si c'est le cas.
+///
+/// # Notes
+///
+/// Si le fichier n'est pas valide et que `silent` est `false`, un message d'avertissement est affiché.
 pub fn is_this_secret(file_path: &Path, silent: bool) -> (bool, Option<String>) {
     if file_path.extension().and_then(|ext| ext.to_str()) == Some("slock") {
         if let Some(secret_name) = file_path.file_stem().and_then(|stem| stem.to_str()) {
@@ -91,7 +145,29 @@ pub fn is_this_secret(file_path: &Path, silent: bool) -> (bool, Option<String>) 
 }
 
 /// Copie une chaîne de caractères dans le presse-papiers.
-/// Retourne une erreur si l'opération échoue.
+///
+/// # Arguments
+///
+/// * `content` - La chaîne de caractères à copier dans le presse-papiers.
+///
+/// # Retourne
+///
+/// * `Result<(), String>` - Un résultat indiquant si l'opération a réussi ou non.
+///
+/// # Exemple
+///
+/// ```rust
+/// use smart_locker::utils::toolbox::copy_to_clipboard;
+///
+/// let content = "This is a test";
+/// copy_to_clipboard(content).expect("Failed to copy to clipboard");
+/// ```
+///
+/// Ce code copie la chaîne "This is a test" dans le presse-papiers.
+///
+/// # Notes
+///
+/// Si l'accès au presse-papiers échoue, une erreur est retournée avec un message explicatif.
 pub fn copy_to_clipboard(content: &str) -> Result<(), String> {
     let mut ctx =
         ClipboardContext::new().map_err(|_| "Unable to access the clipboard".to_string())?;

@@ -28,6 +28,7 @@ MAIN COMMANDS:
   backup-key   Backup the encryption key
   restore-key  Restore the encryption key from a backup
   export       Export secrets to a file in a specified format
+  renew        Renew the expiration date of a secret
 
 EXAMPLE:
   smart-locker encrypt -n openai_token -v sk-abc123...
@@ -36,7 +37,7 @@ EXAMPLE:
   smart-locker backup-key
   smart-locker restore-key
   smart-locker export --format env --output .env
-  
+  smart-locker renew -n openai_token --days 30
 ```
 
 ADVANCED:
@@ -185,61 +186,9 @@ cargo install smart-locker
 - ✅ Option: copy decrypted secret to clipboard
 - ✅ Backup and restore encryption keys with `backup-key` and `restore-key`
 - ✅ Export secrets to a `.env` file with placeholders for secure decryption
+- ✅ Renew expiration dates for secrets with `renew`
+- ✅ Automatic expiration management for secrets
 - 🔜 Option: Git pre-commit hook to prevent secret leaks
-- 🔜 Option: vault with automatic expiration
-
----
-
-## 🧱 New Features
-
-### Improved `smart-locker init`
-
-- Now supports generating a master key from a passphrase for better security.
-- If a passphrase is provided, the key is derived using PBKDF2.
-- Example:
-
-  ```bash
-  smart-locker init --passphrase "my-secure-passphrase"
-  ```
-
-### Backup and Restore Keys
-
-- Added commands to backup and restore the encryption key.
-- Example:
-
-  ```bash
-  smart-locker backup-key
-  smart-locker restore-key
-  ```
-
-### Export Secrets
-
-- Added the `export` command to generate a `.env` file with placeholders for secure decryption.
-- Secrets are not stored in plain text but referenced dynamically using `smart-locker decrypt`.
-- Example:
-
-  ```bash
-  smart-locker export --format env --output .env
-  ```
-
-  Generated `.env` file:
-
-  ```env
-  API_KEY=$(smart-locker decrypt -n API_KEY)
-  DB_PASSWORD=$(smart-locker decrypt -n DB_PASSWORD)
-  ```
-
----
-
-## 🗂️ Target Directory Structure
-
-```tree
-~/.locker/
-├── locker.key         # local symmetric key (or derived from a passphrase)
-├── openai_token.slock
-├── ssh_key_prod.slock
-└── mydb_pass.slock
-```
 
 ---
 
@@ -279,6 +228,45 @@ flowchart TD
     D -->|Read encrypted file| F[Decrypted secret]
 ```
 
+---
+
+## 🧱 New Features
+
+### Renew Expiration Dates
+
+- Added the `renew` command to extend the expiration date of a secret.
+- Example:
+
+  ```bash
+  smart-locker renew -n openai_token --days 30
+  ```
+
+- This command updates the expiration metadata for the specified secret, ensuring it remains valid for the specified number of days.
+
+### Improved Expiration Management
+
+- Secrets can now have expiration dates set during encryption.
+- Example:
+
+  ```bash
+  smart-locker encrypt -n my_secret -v "my value" --tags "tag1,tag2" --days 30
+  ```
+
+- If a secret is expired, it will not be accessible until renewed using the `renew` command.
+
+---
+
+## 🗂️ Target Directory Structure
+
+```tree
+~/.locker/
+├── locker.key         # local symmetric key (or derived from a passphrase)
+├── openai_token.slock
+├── ssh_key_prod.slock
+└── mydb_pass.slock
+```
+
+---
 ---
 
 > 📝 **Note:** If you encounter any issues during installation, please check the [Issues section](https://github.com/WillIsback/smart-locker/issues) or open a new ticket.

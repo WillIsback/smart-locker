@@ -7,6 +7,24 @@ use std::collections::HashMap;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Initializes the metadata file if it does not already exist.
+///
+/// This function creates a `metadata.json` file in the locker directory with an empty structure.
+/// If the file already exists, it does nothing.
+///
+/// # Returns
+/// - `Ok(())` if the metadata file is successfully initialized or already exists.
+/// - `Err(SmartLockerError)` if there is an error during initialization.
+///
+/// # Example
+/// ```
+/// use smart_locker::utils::metadata::init_metadata_file;
+///
+/// match init_metadata_file() {
+///     Ok(_) => println!("Metadata file initialized successfully."),
+///     Err(e) => eprintln!("Failed to initialize metadata file: {}", e),
+/// }
+/// ```
 pub fn init_metadata_file() -> Result<(), SmartLockerError> {
     let metadata_path = get_locker_dir()?.join("metadata.json");
     if !metadata_path.exists() {
@@ -26,6 +44,23 @@ pub fn init_metadata_file() -> Result<(), SmartLockerError> {
     Ok(())
 }
 
+/// Reads the metadata file and returns its contents as a `MetadataFile` object.
+///
+/// If the metadata file does not exist, it returns an empty `MetadataFile` structure.
+///
+/// # Returns
+/// - `Ok(MetadataFile)` containing the metadata.
+/// - `Err(SmartLockerError)` if there is an error reading or parsing the file.
+///
+/// # Example
+/// ```
+/// use smart_locker::utils::metadata::read_metadata;
+///
+/// match read_metadata() {
+///     Ok(metadata) => println!("Metadata loaded: {:?}", metadata),
+///     Err(e) => eprintln!("Failed to read metadata: {}", e),
+/// }
+/// ```
 pub fn read_metadata() -> Result<MetadataFile, SmartLockerError> {
     let locker_dir = get_locker_dir()?;
     let metadata_path = locker_dir.join("metadata.json");
