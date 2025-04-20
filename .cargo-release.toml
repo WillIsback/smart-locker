@@ -1,3 +1,6 @@
+pre-release-hook = ["./scripts/pre-release-hook.sh"]
+
+
 [release]
 sign-commit = false
 sign-tag = false
@@ -12,21 +15,4 @@ consolidate-commits = true
 token = "${CARGO_REGISTRY_TOKEN}"
 
 [github]
-release = true
-release-draft = false
-upload = [
-    "smartlocker_linux.tar.gz",
-    "smartlocker_windows.zip",
-    "target/debian/*.deb",
-    "target/generate-rpm/*.rpm"
-]
-changelog = true
-changelog-path = "CHANGELOG.md"
-pre-release-hook = ["git", "cliff", "-o", "CHANGELOG.md", "--tag", "{{version}}" ]
-
-# Post-release hook to update and push the changelog
-post-release-hook = [
-    "git", "add", "CHANGELOG.md",
-    "&&", "git", "commit", "-m", "chore: update changelog for version {{version}}",
-    "&&", "git", "push"
-]
+release = false

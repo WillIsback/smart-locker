@@ -269,25 +269,12 @@ Because managing secrets in a fullstack project means:
 ## 🧠 System Diagram
 
 ```mermaid
-                +---------------------------+
-                |     smart-locker init      |
-                +-------------+-------------+
-                              |
-                         Generates key 🔑
-                              |
-               +--------------v-------------+
-               |     ~/.locker/locker.key   |
-               +--------------+-------------+
-                              |
-          +-------------------+--------------------+
-          |                                        |
-+---------v--------+                    +----------v---------+
-| smart-locker encrypt |                  | smart-locker decrypt |
-+---------+--------+                    +----------+---------+
-          |                                        |
-     CLI input or STDIN                     Read encrypted file
-          |                                        |
-   `.slock` encrypted file         →        Decrypted secret
+flowchart TD
+    A[smart-locker init] -->|Generates key 🔑| B[~/.locker/locker.key]
+    B --> C[smart-locker encrypt]
+    B --> D[smart-locker decrypt]
+    C -->|CLI input or STDIN| E[.slock encrypted file]
+    D -->|Read encrypted file| F[Decrypted secret]
 ```
 
 ---

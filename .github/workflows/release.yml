@@ -1,242 +1,101 @@
-name: Local CI/CD Pipeline for SmartLocker
+name: SmartLocker CI/CD Optimisé
 
 on:
   push:
     branches:
+      - dev
       - preprod
       - main
-      - dev
+    tags:
+      - 'v*.*.*'
+
 jobs:
-  # Préparation de l'environnement
-  setup:
+  # 🔨 Tests obligatoires sur chaque push (dev, preprod, main)
+  quality:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/willisback/smart-locker-ci:latest
       options: --user root
     steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v3
-  # 1. Linting
-  lint:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/willisback/smart-locker-ci:latest
-      options: --user root
-    needs: [setup]
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v3
-      - name: 🧰 Install build dependencies
-        run: rustup component add clippy
-      - name: 🧹 Run Clippy
+      - uses: actions/checkout@v3
+      - run: rustup component add clippy rustfmt
+      - name: 🧹 Lint (clippy)
         run: cargo clippy --all-targets --all-features -- -D warnings
-
-  # 2. Formatage
-  format:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/willisback/smart-locker-ci:latest
-      options: --user root
-    needs: [setup]
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v3
-      - name: 🧰 Install build dependencies
-        run: rustup component add rustfmt
-      - name: 🧹 Check formatting
+      - name: 🔍 Check Format
         run: cargo fmt --all -- --check
+      - name: 🔨 Build & Test
+        run: |
+          cargo build --release
+          cargo test --release --features disable_clipboard_tests
 
-  # 3. Build cross-platform
-  build:
+  # 📦 Release uniquement sur tags (v*.*.*)
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [quality]  # Conditionne la release à la réussite des tests
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/willisback/smart-locker-ci:latest
       options: --user root
-    needs: [setup]
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
     steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: 🛠️ Build for Linux
-        run: cargo build --release
-
-      - name: 🛠️ Build for Windows
+      - name: 📦 Build Binaries (Linux & Windows)
         run: |
+          cargo build --release
           cargo build --release --target x86_64-pc-windows-gnu
-
-      - name: 📦 Archive binaries
-        run: |
           mkdir -p dist/linux dist/windows
           cp target/release/smart-locker dist/linux/
           tar -czf smartlocker_linux.tar.gz -C dist linux
           cp target/x86_64-pc-windows-gnu/release/smart-locker.exe dist/windows/
           zip -r smartlocker_windows.zip dist/windows
 
-      - name: 📤 Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            smartlocker_linux.tar.gz
-            smartlocker_windows.zip
-
-  # 4. Tests unitaires
-  test:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/willisback/smart-locker-ci:latest
-      options: --user root
-    needs: [setup, lint, format, build]
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v3
-      - name: 🧪 Run tests
+      - name: 📦 Build .deb & .rpm
         run: |
-          cargo run init
-          cargo test --release --features disable_clipboard_tests -- --nocapture
-
-  # 5 Documentation 
-  docs:
-    name: docs-online
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/willisback/smart-locker-ci:latest
-      options: --user root
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v3
-      - name: 📚 Generate documentation online
-        run: cargo doc --no-deps
-      - name: 📤 Upload documentation
-        uses: actions/upload-artifact@v4
-        with:
-          name: documentation
-          path: target/doc
-      
-  # 6. Release
-  release:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/willisback/smart-locker-ci:latest
-      options: --user root
-    needs: [test, docs]
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v3
-
-      - name: 🔐 Configure Git for OAuth
-        run: |
-          git config --global user.email "ci@smartlocker.local"
-          git config --global user.name "SmartLocker CI"
-          git config --global --add safe.directory /__w/smart-locker/smart-locker
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/WillIsback/smart-locker.git
-
-      # Check and update version to avoid duplicates error
-      - name: 🧮 Préparer version pré-release
-        run: |
-          echo "🔍 Récupération des tags distants..."
-          git fetch --tags
-          
-          # Lire la version actuelle dans Cargo.toml
-          CURRENT_VERSION_IN_CARGO=$(grep '^version = ' Cargo.toml | cut -d'"' -f2)
-          
-          
-          # Export the version as an environment variable
-          echo "VERSION=$CURRENT_VERSION_IN_CARGO" >> $GITHUB_ENV
-          echo "🔍 Version mise à jour dans Cargo.toml : $CURRENT_VERSION_IN_CARGO"
-
-      # Generate .deb and .rpm packages
-      - name: 📦 Build .deb and .rpm packages
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
-        run: |
-          cargo build --release
-          cargo deb --fast --deb-version "${{ env.VERSION }}" 
+          cargo deb --fast
           cargo generate-rpm
 
-      # Dry-run pour dev
-      - name: 🚀 Run cargo release (dry-run for dev)
-        if: github.ref == 'refs/heads/dev'
+      - name: 📝 Generate Changelog
         run: |
-          cargo release rc --no-confirm --no-publish --no-push --no-tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          git cliff --tag "${{ github.ref_name }}" -o CHANGELOG.md
 
-      # Pré-version pour preprod
-      - name: 🚀 Run cargo release (pre-version for preprod)
-        if: github.ref == 'refs/heads/preprod'
-        run: |
-          cargo release rc --execute --no-confirm
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
-      # Release stable pour main
-      - name: 🚀 Run cargo release (stable release for main)
-        if: github.ref == 'refs/heads/main'
-        run: | 
-          cargo release patch --execute --no-confirm
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
-      # After running cargo release
-      - name: 📦 Create GitHub Release
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
-        id: create_release # Assign an ID to this step
+      - name: 📤 Create GitHub Release
         uses: actions/create-release@v1.1.4
+        id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "v${{ env.VERSION }}"
-          release_name: "Release v${{ env.VERSION }}"
+          tag_name: "${{ github.ref_name }}"
+          release_name: "Release ${{ github.ref_name }}"
           draft: false
-          prerelease: ${{ github.ref == 'refs/heads/preprod' }}
-          body: |
-            This release includes:
-            - Precompiled binaries
-            - `.deb` and `.rpm` packages
+          prerelease: contains(github.ref_name, 'rc') || contains(github.ref_name, 'pre')
+          body_path: CHANGELOG.md
 
-      - name: 🔍 Debug .deb and .rpm Files
-        run: |
-          echo "Listing .deb files:"
-          ls -l target/debian/
-          echo "Listing .rpm files:"
-          ls -l target/generate-rpm/
-
-      - name: 📤 Upload Release Assets
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
+      - name: 📤 Upload Assets (.deb, .rpm, binaries)
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # Reference the output of the create-release step
-          asset_path: target/debian/smart-locker_${{ env.VERSION }}_amd64.deb
-          asset_name: smartlocker_${{ env.VERSION }}.deb
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: target/debian/smart-locker_*.deb
+          asset_name: smartlocker_${{ github.ref_name }}.deb
           asset_content_type: application/vnd.debian.binary-package
 
-      - name: 📤 Upload RPM Asset
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
+      - name: 📤 Upload RPM
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # Reference the output of the create-release step
-          asset_path: target/generate-rpm/smart-locker-${{ env.VERSION }}-1.x86_64.rpm
-          asset_name: smartlocker_${{ env.VERSION }}.rpm
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: target/generate-rpm/smart-locker-*.rpm
+          asset_name: smartlocker_${{ github.ref_name }}.rpm
           asset_content_type: application/x-rpm
 
-      - name: 📥 Download build artifacts
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-
       - name: 📤 Upload Linux Binary
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -247,7 +106,6 @@ jobs:
           asset_content_type: application/gzip
         
       - name: 📤 Upload Windows Binary
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preprod'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -256,17 +114,3 @@ jobs:
           asset_path: smartlocker_windows.zip
           asset_name: smartlocker_windows.zip
           asset_content_type: application/zip
-
-
-      # - name: 🔑 Generate checksums and signatures
-      #   run: |
-      #     sha256sum dist/* > checksums.txt
-      #     gpg --detach-sign --armor checksums.txt
-          
-      # - name: 📤 Upload checksums and signatures
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: checksums
-      #     path: |
-      #       checksums.txt
-      #       checksums.txt.asc
