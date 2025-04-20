@@ -5,7 +5,7 @@ use smart_locker::commands::{
     decrypt::decrypt, encrypt::encrypt, export::export, list::list_secrets,
     migrate::migrate_metadata, remove::remove_secret, renew::renew_secret,
 };
-use smart_locker::utils::toolbox::{backup_key, init_locker_with_passphrase, restore_key};
+use smart_locker::utils::toolbox::{backup_key, init_locker_with_passphrase, restore_key, copy_to_clipboard};
 use std::io::Read;
 use std::process::exit;
 
@@ -310,64 +310,20 @@ fn main() {
         }
     } else if let Some(matches) = matches.subcommand_matches("decrypt") {
         let name = matches.get_one::<String>("name").expect("Name is required");
-
+    
         match decrypt(name) {
             Ok(decrypted_value) => {
+                println!("DEBUG: Decrypted value: {}", decrypted_value); // Log temporaire
                 if matches.get_flag("clipboard") {
-                    if cfg!(target_os = "linux") && std::env::var("WSL_DISTRO_NAME").is_ok() {
-                        use std::process::{Command, Stdio};
-                        match Command::new("clip.exe").stdin(Stdio::piped()).spawn() {
-                            Ok(mut child) => {
-                                {
-                                    let stdin = match child.stdin.as_mut() {
-                                        Some(stdin) => stdin,
-                                        None => {
-                                            eprintln!("{}", "Unable to access stdin".red());
-                                            exit(1);
-                                        }
-                                    };
-                                    use std::io::Write;
-                                    if let Err(err) = stdin.write_all(decrypted_value.as_bytes()) {
-                                        eprintln!(
-                                            "{}",
-                                            format!("Error writing to clip.exe: {}", err).red()
-                                        );
-                                        exit(1);
-                                    }
-                                }
-                                if let Err(err) = child.wait() {
-                                    eprintln!(
-                                        "{}",
-                                        format!("Error executing clip.exe: {}", err).red()
-                                    );
-                                    exit(1);
-                                }
-                                println!("{}", "✅ Secret copied to Windows clipboard!".green());
-                            }
-                            Err(err) => {
-                                eprintln!(
-                                    "{}",
-                                    format!("Unable to execute clip.exe: {}", err).red()
-                                );
-                                exit(1);
-                            }
-                        };
-                    } else {
-                        // Copy to Linux clipboard
-                        use copypasta::{ClipboardContext, ClipboardProvider};
-                        let mut ctx =
-                            ClipboardContext::new().expect("Unable to access the clipboard");
-                        if let Err(err) = ctx.set_contents(decrypted_value.clone()) {
-                            eprintln!(
-                                "{}",
-                                format!("Error copying to the clipboard: {}", err).red()
-                            );
-                            exit(1);
-                        }
-                        println!("{}", "✅ Secret copied to the clipboard!".green());
+                    if let Err(err) = copy_to_clipboard(&decrypted_value) {
+                        eprintln!(
+                            "{}",
+                            format!("Error copying to the clipboard: {}", err).red()
+                        );
+                        exit(1);
                     }
+                    println!("{}", "✅ Secret copied to the clipboard!".green());
                 } else {
-                    // Print the decrypted value to the terminal
                     println!("{}", decrypted_value.green());
                 }
             }

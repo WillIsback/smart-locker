@@ -5,6 +5,8 @@ use crate::SmartLockerError;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fs;
+use std::time::{SystemTime, UNIX_EPOCH};
+
 
 pub fn read_metadata() -> Result<MetadataFile, SmartLockerError> {
     let locker_dir = get_locker_dir()?;
@@ -33,6 +35,27 @@ pub fn write_metadata(metadata: &MetadataFile) -> Result<(), SmartLockerError> {
         SmartLockerError::FileSystemError(format!("Error writing metadata file: {}", e))
     })
 }
+
+pub fn update_secret_metadata<F>(
+    secret_name: &str,
+    metadata: &mut MetadataFile,
+    update_fn: F,
+) -> Result<(), SmartLockerError>
+where
+    F: FnOnce(&mut SecretMetadata),
+{
+    if let Some(secret_metadata) = metadata.secrets.get_mut(secret_name) {
+        update_fn(secret_metadata);
+        write_metadata(metadata)?;
+        Ok(())
+    } else {
+        Err(SmartLockerError::FileSystemError(format!(
+            "Metadata for secret '{}' not found.",
+            secret_name
+        )))
+    }
+}
+
 
 pub fn has_metadata_file() -> bool {
     let locker_dir = get_locker_dir().unwrap();
@@ -73,4 +96,21 @@ pub fn has_this_secret_metadata(secret_name: &str, metadata: &MetadataFile) -> b
         );
         false // Métadonnées manquantes
     }
+}
+
+pub fn mark_secret_as_expired(
+    secret_name: &str,
+    metadata: &mut MetadataFile,
+) -> Result<(), SmartLockerError> {
+    update_secret_metadata(secret_name, metadata, |secret_metadata| {
+        secret_metadata.expired = true;
+    })
+}
+
+pub fn is_secret_expired(secret_metadata: &SecretMetadata) -> bool {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    now > secret_metadata.expire_at
 }

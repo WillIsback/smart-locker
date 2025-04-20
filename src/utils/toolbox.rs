@@ -7,6 +7,7 @@ use std::env;
 use std::fs;
 use std::num::NonZeroU32;
 use std::path::PathBuf;
+use copypasta::{ClipboardContext, ClipboardProvider};
 
 /// Initialise le répertoire `.locker` et génère une clé symétrique si nécessaire.
 pub fn init_locker() -> LockerResult<()> {
@@ -213,4 +214,13 @@ pub fn is_this_secret(file_path: &PathBuf, silent: bool) -> (bool, Option<String
         }
         (false, None)
     }
+}
+
+
+/// Copie une chaîne de caractères dans le presse-papiers.
+/// Retourne une erreur si l'opération échoue.
+pub fn copy_to_clipboard(content: &str) -> Result<(), String> {
+    let mut ctx = ClipboardContext::new().map_err(|_| "Unable to access the clipboard".to_string())?;
+    ctx.set_contents(content.to_string())
+        .map_err(|_| "Failed to copy content to the clipboard".to_string())
 }
