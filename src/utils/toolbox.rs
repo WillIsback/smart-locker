@@ -5,8 +5,8 @@ use copypasta::{ClipboardContext, ClipboardProvider};
 use directories::UserDirs;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
 use std::path::Path;
+use std::path::PathBuf;
 
 /// Vérifie et crée un répertoire s'il n'existe pas.
 pub fn ensure_dir_exists(path: &PathBuf) -> LockerResult<()> {
