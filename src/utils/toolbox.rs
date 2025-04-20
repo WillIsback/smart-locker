@@ -165,3 +165,56 @@ pub fn restore_key() -> LockerResult<()> {
     }
     Ok(())
 }
+
+/// Vérifie si le fichier donné est un secret valide avec l'extension `.slock`.
+///
+/// # Arguments
+///
+/// * `file_path` - Le chemin du fichier à vérifier.
+/// * `silent` - Si `true`, la fonction n'affiche aucun message.
+///
+/// # Retourne
+///
+/// * `(bool, Option<String>)` - Un tuple où :
+///   - `bool` indique si le fichier est un secret valide.
+///   - `Option<String>` contient le nom du secret (`secret_name`) si le fichier est valide.
+///
+/// # Exemple
+///
+/// ```rust
+/// use std::path::PathBuf;
+/// let file_path = PathBuf::from("example.slock");
+/// let (is_valid, secret_name) = is_this_secret(&file_path, false);
+/// if is_valid {
+///     println!("Secret valid: {}", secret_name.unwrap());
+/// }
+/// ```
+pub fn is_this_secret(file_path: &PathBuf, silent: bool) -> (bool, Option<String>) {
+    if file_path.extension().and_then(|ext| ext.to_str()) == Some("slock") {
+        if let Some(secret_name) = file_path.file_stem().and_then(|stem| stem.to_str()) {
+            return (true, Some(secret_name.to_string()));
+        } else if !silent {
+            println!(
+                "{}",
+                format!(
+                    "⚠️ Invalid secret file name '{}'.",
+                    file_path.display()
+                )
+                .yellow()
+            );
+        }
+        (false, None)
+    } else {
+        if !silent {
+            println!(
+                "{}",
+                format!(
+                    "⚠️ The file '{}' is not a valid secret file.",
+                    file_path.display()
+                )
+                .yellow()
+            );
+        }
+        (false, None)
+    }
+}

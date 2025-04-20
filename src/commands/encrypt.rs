@@ -1,6 +1,6 @@
 use crate::utils::toolbox::get_locker_dir;
-use crate::SecretMetadata;
-use crate::SmartLockerError;
+use crate::utils::metadata::{read_metadata, write_metadata};
+use crate::{SecretMetadata, LockerResult, SmartLockerError};
 use aes_gcm::aead::Aead;
 use aes_gcm::KeyInit;
 use aes_gcm::{Aes256Gcm, Key, Nonce};
@@ -16,7 +16,7 @@ pub fn encrypt(
     name: &str,
     tags: Vec<String>,
     expiration_days: Option<u64>,
-) -> Result<(), SmartLockerError> {
+) -> LockerResult<()> {
     let locker_dir = get_locker_dir()?;
     let key_path = locker_dir.join("locker.key");
 
