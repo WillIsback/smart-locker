@@ -7,6 +7,7 @@ use std::env;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
+use std::process::Command;
 
 /// Vérifie et crée un répertoire s'il n'existe pas.
 ///
@@ -144,6 +145,7 @@ pub fn is_this_secret(file_path: &Path, silent: bool) -> (bool, Option<String>) 
     }
 }
 
+
 /// Copie une chaîne de caractères dans le presse-papiers.
 ///
 /// # Arguments
@@ -154,23 +156,91 @@ pub fn is_this_secret(file_path: &Path, silent: bool) -> (bool, Option<String>) 
 ///
 /// * `Result<(), String>` - Un résultat indiquant si l'opération a réussi ou non.
 ///
-/// # Exemple
-///
-/// ```rust
-/// use smart_locker::utils::toolbox::copy_to_clipboard;
-///
-/// let content = "This is a test";
-/// copy_to_clipboard(content).expect("Failed to copy to clipboard");
-/// ```
-///
-/// Ce code copie la chaîne "This is a test" dans le presse-papiers.
-///
 /// # Notes
 ///
+/// Cette fonction est compatible avec Windows, Linux, et WSL.
 /// Si l'accès au presse-papiers échoue, une erreur est retournée avec un message explicatif.
 pub fn copy_to_clipboard(content: &str) -> Result<(), String> {
-    let mut ctx =
-        ClipboardContext::new().map_err(|_| "Unable to access the clipboard".to_string())?;
-    ctx.set_contents(content.to_string())
-        .map_err(|_| "Failed to copy content to the clipboard".to_string())
+    println!("Attempting to copy to clipboard...");
+
+    if cfg!(target_os = "windows") {
+        // Utilisation de copypasta pour Windows
+        let mut ctx = ClipboardContext::new()
+            .map_err(|_| "Unable to access the clipboard on Windows".to_string())?;
+        ctx.set_contents(content.to_string())
+            .map_err(|_| "Failed to copy content to the clipboard on Windows".to_string())?;
+        println!("✅ Content copied to clipboard on Windows.");
+        Ok(())
+    } else if cfg!(target_os = "linux") {
+        // Vérification si on est sous WSL
+        if is_wsl() {
+            // Utilisation de clip.exe pour WSL
+            Command::new("clip.exe")
+                .stdin(std::process::Stdio::piped())
+                .spawn()
+                .and_then(|mut child| {
+                    if let Some(stdin) = child.stdin.as_mut() {
+                        use std::io::Write;
+                        stdin.write_all(content.as_bytes())?;
+                    }
+                    child.wait() // Attendre la fin du processus
+                })
+                .map_err(|_| "Failed to copy content to clipboard on WSL".to_string())?;
+            println!("✅ Content copied to clipboard on WSL.");
+            Ok(())
+        } else {
+            // Utilisation de xclip ou xsel pour Linux natif
+            if Command::new("xclip").output().is_ok() {
+                Command::new("xclip")
+                    .arg("-selection")
+                    .arg("clipboard")
+                    .stdin(std::process::Stdio::piped())
+                    .spawn()
+                    .and_then(|mut child| {
+                        if let Some(stdin) = child.stdin.as_mut() {
+                            use std::io::Write;
+                            stdin.write_all(content.as_bytes())?;
+                        }
+                        child.wait()
+                    })
+                    .map_err(|_| "Failed to copy content to clipboard using xclip".to_string())?;
+                println!("✅ Content copied to clipboard using xclip.");
+                Ok(())
+            } else if Command::new("xsel").output().is_ok() {
+                Command::new("xsel")
+                    .arg("--clipboard")
+                    .arg("--input")
+                    .stdin(std::process::Stdio::piped())
+                    .spawn()
+                    .and_then(|mut child| {
+                        if let Some(stdin) = child.stdin.as_mut() {
+                            use std::io::Write;
+                            stdin.write_all(content.as_bytes())?;
+                        }
+                        child.wait()
+                    })
+                    .map_err(|_| "Failed to copy content to clipboard using xsel".to_string())?;
+                println!("✅ Content copied to clipboard using xsel.");
+                Ok(())
+            } else {
+                Err("No clipboard utility (xclip or xsel) found on Linux".to_string())
+            }
+        }
+    } else {
+        Err("Unsupported operating system".to_string())
+    }
+}
+
+/// Vérifie si le programme tourne sous WSL.
+///
+/// # Retourne
+///
+/// * `bool` - `true` si le programme tourne sous WSL, sinon `false`.
+fn is_wsl() -> bool {
+    if let Ok(output) = Command::new("uname").arg("-r").output() {
+        if let Ok(stdout) = String::from_utf8(output.stdout) {
+            return stdout.to_lowercase().contains("microsoft");
+        }
+    }
+    false
 }

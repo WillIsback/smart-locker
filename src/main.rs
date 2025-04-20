@@ -329,7 +329,6 @@ fn main() {
 
         match decrypt(name) {
             Ok(decrypted_value) => {
-                println!("DEBUG: Decrypted value: {}", decrypted_value); // Log temporaire
                 if matches.get_flag("clipboard") {
                     if let Err(err) = copy_to_clipboard(&decrypted_value) {
                         eprintln!(
