@@ -45,6 +45,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: 🔍 Extract Version
+        id: extract_version
+        run: |
+          version=$(echo "${GITHUB_REF##*/}" | sed 's/^v//')
+          echo "Version extraite : $version"
+          echo "version=$version" >> $GITHUB_ENV
+
       - name: 📦 Build Binaries (Linux & Windows)
         run: |
           cargo build --release
@@ -58,10 +65,8 @@ jobs:
       - name: 📦 Build .deb & .rpm
         run: |
           cargo build --release
-          # Extraire la version sans le préfixe 'v'
-          version=$(echo "${GITHUB_REF##*/}" | sed 's/^v//')
-          echo "Version utilisée pour .deb et .rpm : $version"
-          cargo deb --fast --deb-version "$version"
+          echo "Version utilisée pour .deb et .rpm : $VERSION"
+          cargo deb --fast --deb-version "$VERSION"
           cargo generate-rpm
 
       - name: 📤 Create GitHub Release
@@ -92,7 +97,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: target/generate-rpm/smart-locker-*.rpm
+          asset_path: target/generate-rpm/smart-locker-${{ env.VERSION }}-1.x86_64.rpm
           asset_name: smartlocker_${{ github.ref_name }}.rpm
           asset_content_type: application/x-rpm
 
