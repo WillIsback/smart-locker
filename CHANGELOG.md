@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2025-04-20
+
+### 🐛 Bug Fixes
+
+- *(release)* Extract version from tag for .deb and .rpm builds
+
+### 📚 Documentation
+
+- Mise à jour du changelog pour la version 2.0.0
+
 ## [0.2.7] - 2025-04-20
 
 ### 🐛 Bug Fixes
