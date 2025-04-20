@@ -45,3 +45,4 @@ release-*/
 local_artifacts/
 
 .github/workflows/release_local.yml
+release-check.sh
