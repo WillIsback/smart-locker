@@ -145,7 +145,6 @@ pub fn is_this_secret(file_path: &Path, silent: bool) -> (bool, Option<String>) 
     }
 }
 
-
 /// Copie une chaîne de caractères dans le presse-papiers.
 ///
 /// # Arguments
