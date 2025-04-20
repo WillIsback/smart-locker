@@ -4,11 +4,48 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2025-04-20
+
+### 🚀 Features
+
+- *(list, encrypt)* Add support for secret metadata with tags in encryption and listing commands
+- *(renew)* Implement secret renewal functionality with expiration management
+- *(migrate)* Implement metadata migration functionality and add metadata handling utilities
+- Add renew command to extend expiration dates for secrets; enhance metadata and toolbox documentation
+
+### 🐛 Bug Fixes
+
+- *(list)* Simplify timestamp fallback logic in list_secrets function
+- *(clipboard)* Remove debug log from decrypt function; enhance clipboard copy functionality with OS-specific handling
+
+### 💼 Other
+
+- *(encryption)* Process to utilize EncryptionConfig for improved structure and maintainability
+
+### 🚜 Refactor
+
+- Simplify code formatting and improve readability in encrypt and list commands
+- Reorganize module imports and improve code formatting across multiple files
+- Clean up imports and improve code formatting in multiple files
+- Clean up module imports and improve code formatting across multiple files
+- Simplify error handling in encryption and decryption processes; update path type in is_this_secret function
+- Reorder import statements for improved clarity and consistency
+- Remove unnecessary blank line in is_this_secret function; ensure consistent formatting
+- Add Debug trait to SecretMetadata and MetadataFile structs for improved logging and debugging
+
 ## [0.2.12] - 2025-04-20
 
 ### 🐛 Bug Fixes
 
 - Correct version extraction and update asset naming in release workflow
+
+### 📚 Documentation
+
+- Mise à jour du changelog pour la version 0.2.12
+
+### ⚙️ Miscellaneous Tasks
+
+- Release smart-locker version 0.2.12
 
 ## [0.2.11] - 2025-04-20
 
