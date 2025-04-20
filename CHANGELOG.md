@@ -2,7 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.2.2] - 2025-04-19
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Release of the version 0.2.1
+- Release smart-locker version 0.2.2
+
+## [0.2.1] - 2025-04-19
+
+### ⚙️ Miscellaneous Tasks
+
+- Release smart-locker version 0.2.1
+
+## [0.2.0] - 2025-04-19
 
 ### 🚀 Features
 
