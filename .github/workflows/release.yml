@@ -58,7 +58,10 @@ jobs:
       - name: 📦 Build .deb & .rpm
         run: |
           cargo build --release
-          cargo deb --fast --deb-version "${{ github.ref_name }}"
+          # Extraire la version sans le préfixe 'v'
+          version=$(echo "${GITHUB_REF##*/}" | sed 's/^v//')
+          echo "Version utilisée pour .deb et .rpm : $version"
+          cargo deb --fast --deb-version "$version"
           cargo generate-rpm
 
       - name: 📤 Create GitHub Release
