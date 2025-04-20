@@ -103,3 +103,21 @@ pub fn list_secrets() -> Result<Vec<String>, SmartLockerError> {
 
     Ok(secrets)
 }
+
+
+pub fn list_secrets_names() -> Result<Vec<String>, SmartLockerError> {
+    let metadata = read_metadata()?;
+
+    // Collecter uniquement les noms des secrets
+    let secret_names: Vec<String> = metadata
+        .secrets
+        .keys()
+        .cloned()
+        .collect();
+
+    if secret_names.is_empty() {
+        println!("⚠️ No secrets found.");
+    }
+
+    Ok(secret_names)
+}

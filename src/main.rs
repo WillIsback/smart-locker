@@ -3,11 +3,10 @@ use clap::{Arg, Command};
 use colored::*; // For colored output
 use smart_locker::commands::{
     decrypt::decrypt, encrypt::encrypt, export::export, list::list_secrets,
-    migrate::migrate_metadata, remove::remove_secret, renew::renew_secret,
+    remove::remove_secret, renew::renew_secret,
+    init::{init_locker_with_passphrase, backup_key, restore_key},
 };
-use smart_locker::utils::toolbox::{
-    backup_key, copy_to_clipboard, init_locker_with_passphrase, restore_key,
-};
+use smart_locker::utils::toolbox::copy_to_clipboard;
 use std::io::Read;
 use std::process::exit;
 
@@ -38,6 +37,8 @@ fn main() {
             --clipboard: Copies the decrypted secret to the clipboard.\n\n\
         - list: Lists all available secrets.\n\
         - remove: Deletes a secret.\n\
+            --name: Name of the secret to delete.\n\n\
+            --all: Deletes all secrets.\n\n\
         - renew: Renews an expired secret.\n\
             --name: Name of the secret to renew.\n\
             --days: Number of additional days to extend the expiration (default: 15).\n\n\
@@ -182,15 +183,24 @@ fn main() {
                     "Deletes a secret from the vault.\n\n\
                 EXAMPLES:\n\
                 - Delete a secret:\n\
-                  smart-locker remove -n my_secret",
+                  smart-locker remove -n my_secret,
+                - Delete all secrets:\n\
+                  smart-locker remove --all",
                 )
                 .arg(
                     Arg::new("name")
                         .short('n')
                         .long("name")
                         .num_args(1)
-                        .required(true)
-                        .help("Name of the secret to delete"),
+                        .conflicts_with("all")
+                        .help("Name of the secret to remove"),
+                )
+                .arg(
+                    Arg::new("all")
+                        .long("all")
+                        .action(clap::ArgAction::SetTrue)
+                        .conflicts_with("name")
+                        .help("Remove all secrets and their metadata"),
                 ),
         )
         .subcommand(
@@ -352,12 +362,19 @@ fn main() {
             }
         }
     } else if let Some(matches) = matches.subcommand_matches("remove") {
-        let name = matches.get_one::<String>("name").unwrap();
-        remove_secret(name).expect("Failed to delete the secret");
-        println!(
-            "{}",
-            format!("✅ Secret '{}' deleted successfully!", name).green()
-        );
+        let name = matches.get_one::<String>("name");
+        let remove_all = matches.get_flag("all"); // Vérifie si --all est présent
+
+        if let Err(e) = remove_secret(name.map(|s| s.as_str()), remove_all) {
+            eprintln!("Error: {}", e);
+        } else if remove_all {
+            println!("{}", "✅ All secrets deleted successfully!".green());
+        } else if let Some(secret_name) = name {
+            println!(
+                "{}",
+                format!("✅ Secret '{}' deleted successfully!", secret_name).green()
+            );
+        }
     } else if let Some(matches) = matches.subcommand_matches("renew") {
         let name = matches.get_one::<String>("name").unwrap();
         let days: u64 = matches

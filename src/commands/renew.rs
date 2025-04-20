@@ -1,25 +1,39 @@
-use crate::utils::toolbox::get_locker_dir;
-use crate::SecretMetadata;
+use crate::utils::metadata::{has_this_secret_metadata,is_secret_expired, read_metadata, mark_secret_as_expired, update_secret_expiration};
+use crate::MetadataFile;
 use crate::SmartLockerError;
-use std::fs;
+use colored::Colorize;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn renew_secret(name: &str, additional_days: u64) -> Result<(), SmartLockerError> {
-    let locker_dir = get_locker_dir()?;
-    let metadata_path = locker_dir.join(format!("{}.meta.json", name));
-
-    // Lire les métadonnées
-    let metadata_content = fs::read_to_string(&metadata_path).map_err(|_| {
-        SmartLockerError::FileSystemError("Unable to read metadata file".to_string())
+    // Charger les métadonnées
+    let metadata_result = read_metadata();
+    let mut metadata = metadata_result.unwrap_or_else(|_| MetadataFile {
+        secrets: Default::default(),
+    });
+    // Vérifier les métadonnées
+    if !has_this_secret_metadata(name, &metadata) {
+        println!(
+            "{}",
+            format!(
+                "⚠️ Metadata for secret '{}' is missing or outdated. Do you want to migrate it? (yes/no): ",
+                name
+            )
+            .yellow()
+        );
+    }
+    // Vérifier si le secret est présent dans les métadonnées
+    let secret_metadata = metadata.secrets.get(name).ok_or_else(|| {
+        SmartLockerError::DecryptionError(format!(
+            "Metadata for secret '{}' is missing after migration.",
+            name
+        ))
     })?;
-    let mut metadata: SecretMetadata = serde_json::from_str(&metadata_content).map_err(|_| {
-        SmartLockerError::FileSystemError("Unable to parse metadata file".to_string())
-    })?;
 
-    // Vérifier si la clé est expirée
-    if !metadata.expired {
+    // Vérifier si le secret est expiré
+    if is_secret_expired(secret_metadata) {
+        mark_secret_as_expired(name, &mut metadata)?;
         return Err(SmartLockerError::DecryptionError(format!(
-            "The secret '{}' is not expired and does not need renewal.",
+            "The secret '{}' has expired. Please renew it to use it again.",
             name
         )));
     }
@@ -29,14 +43,9 @@ pub fn renew_secret(name: &str, additional_days: u64) -> Result<(), SmartLockerE
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    metadata.expire_at = now + (additional_days * 24 * 60 * 60);
-    metadata.expired = false;
+    let new_expiration = now + (additional_days * 24 * 60 * 60);
 
-    // Sauvegarder les métadonnées mises à jour
-    let updated_metadata_json = serde_json::to_string(&metadata).unwrap();
-    fs::write(metadata_path, updated_metadata_json).map_err(|_| {
-        SmartLockerError::FileSystemError("Unable to write updated metadata file".to_string())
-    })?;
+    update_secret_expiration(name, &mut metadata, new_expiration)?;
 
     println!("✅ The secret '{}' has been successfully renewed.", name);
     Ok(())

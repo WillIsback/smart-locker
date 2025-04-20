@@ -1,4 +1,4 @@
-use crate::commands::list::list_secrets;
+use crate::commands::list;
 use crate::LockerResult;
 use crate::SmartLockerError;
 use std::env;
@@ -38,7 +38,7 @@ pub fn export(format: &str, output_file: Option<&str>) -> LockerResult<()> {
     };
 
     // Liste des secrets à exporter
-    let secret_list: Vec<String> = list_secrets()?;
+    let secret_list: Vec<String> = list::list_secrets_names()?;
     if secret_list.is_empty() {
         eprintln!("Aucun secret à exporter.");
         return Ok(());

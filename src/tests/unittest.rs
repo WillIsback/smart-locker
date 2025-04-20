@@ -1,50 +1,77 @@
-use smart_locker::commands::{decrypt, encrypt, list, remove};
-use smart_locker::utils::toolbox::get_locker_dir;
+use smart_locker::commands::{decrypt, encrypt, list, remove, export, renew, init};
+use directories::UserDirs;
 use std::fs;
-use std::io::Read;
+use std::path::PathBuf;
+use std::env;
+use uuid::Uuid;
+use serial_test::serial;
 
-// Helper function to setup test environment
-fn setup_test_environment() -> std::path::PathBuf {
-    let locker_dir = get_locker_dir().expect("Failed to get locker directory");
-    let key_path = locker_dir.join("locker.key");
+// Helper function to setup and initialize the test environment
+fn setup_and_initialize() -> PathBuf {
+    let unique_id = Uuid::new_v4().to_string();
+    let test_dir = UserDirs::new()
+        .map(|dirs| dirs.home_dir().join(".locker/test/").join(&unique_id))
+        .expect("Failed to get user directories");
 
-    // Create locker directory if it doesn't exist
-    if !locker_dir.exists() {
-        fs::create_dir_all(&locker_dir).expect("Failed to create locker directory");
+    let env_var_name = format!("SMART_LOCKER_TEST_DIR_{}", unique_id);
+    env::set_var(&env_var_name, &test_dir);
+
+    if test_dir.exists() {
+        // Nettoyer le dossier de test
+        fs::remove_dir_all(test_dir.clone()).unwrap_or_else(|e| {
+            eprintln!("Failed to clean up test directory: {}", e);
+        });
     }
-
-    // Create key file if it doesn't exist
-    if !key_path.exists() {
-        let key = vec![0u8; 32];
-        fs::write(&key_path, key).expect("Failed to write key file");
+    else {
+        init::init_locker_with_passphrase(None).expect("Failed to initialize locker with passphrase");
     }
-
-    locker_dir
+    test_dir
 }
 
-// Helper function to clean up test files
-fn cleanup_test_file(filename: &str) {
-    let path = get_locker_dir()
-        .expect("Failed to get locker directory")
-        .join(filename);
-    if path.exists() {
-        fs::remove_file(&path).unwrap_or_else(|e| eprintln!("Cleanup error: {}", e));
+// Helper function to clean up environment variables
+fn cleanup_environment_variables() {
+    for (key, _) in env::vars() {
+        if key.starts_with("SMART_LOCKER_TEST_DIR_") {
+            env::remove_var(key);
+        }
+    }
+}
+
+#[cfg(test)]
+mod cleanup {
+    use std::fs;
+    use std::path::PathBuf;
+
+    /// Nettoie tout le dossier `test` après l'exécution de tous les tests.
+    #[ctor::dtor]
+    fn cleanup_test_directory() {
+        let test_dir = PathBuf::from(
+            directories::UserDirs::new()
+                .expect("Failed to get user directories")
+                .home_dir()
+                .join(".locker/test"),
+        );
+
+        if test_dir.exists() {
+            fs::remove_dir_all(&test_dir).unwrap_or_else(|e| {
+                eprintln!("Failed to clean up test directory: {}", e);
+            });
+            println!("✅ Cleaned up test directory: {:?}", test_dir);
+        }
     }
 }
 
 #[test]
+#[serial]
 fn test_encrypt_and_decrypt() {
-    let locker_dir = setup_test_environment();
-
+    let locker_dir = setup_and_initialize();
     let secret_name = "test_encrypt_and_decrypt_secret";
     let secret_value = "Ceci est un test";
     let encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
 
-    // Ensure the test file doesn't exist before starting
-    cleanup_test_file(&format!("{}.slock", secret_name));
+    // Encrypt the secret
     let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
     let expiration_days = Some(30);
-    // Encrypt the secret
     encrypt::encrypt(secret_value, secret_name, tags, expiration_days)
         .expect("Failed to encrypt secret");
 
@@ -57,179 +84,162 @@ fn test_encrypt_and_decrypt() {
 
     // Decrypt and verify content
     let decrypted_value = decrypt::decrypt(secret_name).expect("Failed to decrypt secret");
+    println!("Decrypted value: {}", decrypted_value);
     assert_eq!(
         decrypted_value, secret_value,
         "Decrypted secret doesn't match original"
     );
-
-    // Clean up test file
-    cleanup_test_file(&format!("{}.slock", secret_name));
+    // Nettoyage des variables d'environnement
+    cleanup_environment_variables();
 }
 
+
 #[test]
+#[serial]
 fn test_list_secrets() {
-    let locker_dir = setup_test_environment();
+    let locker_dir = setup_and_initialize();
     let test_secret_name = "test_list_secrets_secret";
+    let test_secret_value = "This is a test secret";
+
+    // Encrypt the secret (this ensures metadata is created)
+    encrypt::encrypt(
+        test_secret_value,
+        test_secret_name,
+        vec!["test".to_string()],
+        Some(30),
+    )
+    .expect("Failed to encrypt secret");
+
+    // Verify the encrypted file exists
     let test_file = locker_dir.join(format!("{}.slock", test_secret_name));
+    assert!(test_file.exists(), "Test file was not created properly");
 
-    // Ensure clean state
-    cleanup_test_file(&format!("{}.slock", test_secret_name));
+    // Get the list of secret names
+    let secret_names = list::list_secrets_names().expect("Failed to list secret names");
 
-    // Create test file
-    fs::write(&test_file, b"test").expect("Failed to create test file");
-
-    // Get the list of secrets
-    let secrets = list::list_secrets().expect("Failed to list secrets");
+    // Print the list of secrets
+    println!("List of secrets: {:?}", secret_names);
 
     // Verify our test secret is in the list
     assert!(
-        secrets.contains(&"test_list_secrets_secret".to_string()),
-        "Le fichier 'test_list_secrets_secret' n'apparaît pas dans la liste. Secrets : {:?}",
-        secrets
+        secret_names.contains(&test_secret_name.to_string()),
+        "The secret '{}' is not listed. Secrets: {:?}",
+        test_secret_name,
+        secret_names
     );
-
-    // Clean up
-    cleanup_test_file(&format!("{}.slock", test_secret_name));
+    // Nettoyage des variables d'environnement
+    cleanup_environment_variables();
 }
 
 #[test]
+#[serial]
 fn test_remove_secret() {
-    let locker_dir = setup_test_environment();
+    let locker_dir = setup_and_initialize();
     let test_secret_name = "test_remove_secret_secret";
-    let test_file = locker_dir.join(format!("{}.slock", test_secret_name));
+    let test_secret_value = "This is a test secret";
 
-    // Create test file
-    fs::write(&test_file, b"test").expect("Failed to create test file");
+    // Encrypt the secret (this ensures metadata is created)
+    encrypt::encrypt(
+        test_secret_value,
+        test_secret_name,
+        vec!["test".to_string()],
+        Some(30),
+    )
+    .expect("Failed to encrypt secret");
+
+    // Verify the encrypted file exists
+    let test_file = locker_dir.join(format!("{}.slock", test_secret_name));
     assert!(test_file.exists(), "Test file was not created properly");
 
-    // Remove the secret
-    remove::remove_secret(test_secret_name).expect("Failed to remove secret");
+    // List files in the directory for debugging
+    for entry in fs::read_dir(&locker_dir).expect("Failed to read locker directory") {
+        let entry = entry.expect("Failed to read entry");
+        println!("Found file: {:?}", entry.path());
+    }
 
-    // Verify it's gone
+    // Remove the secret
+    remove::remove_secret(Some(test_secret_name), false).expect("Failed to remove secret");
+
+    // Verify the file is gone
     assert!(!test_file.exists(), "Secret file wasn't removed");
+
+    // Verify the metadata is gone
+    let metadata = fs::read_to_string(locker_dir.join("metadata.json"))
+        .expect("Failed to read metadata file");
+    println!("Metadata after removal: {}", metadata);
+    assert!(
+        !metadata.contains(test_secret_name),
+        "Metadata for the secret was not removed"
+    );
+    // Nettoyage des variables d'environnement
+    cleanup_environment_variables();
 }
 
 #[test]
-fn test_encrypt_with_stdin() {
-    use std::io::Cursor;
-    let locker_dir = setup_test_environment();
+#[serial]
+fn test_export_secrets() {
+    let locker_dir = setup_and_initialize();
+    let secret_name = "test_export_secret";
+    let secret_value = "export_test_value";
+    let export_file = locker_dir.join("exported_secrets.env");
 
-    let secret_name = "test_encrypt_with_stdin_secret";
-    let secret_value = "Ceci est un test";
-    let encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
+    // Encrypt a secret
+    let tags: Vec<String> = ["export", "test"].iter().map(|&s| s.to_string()).collect();
+    encrypt::encrypt(secret_value, secret_name, tags, None).expect("Failed to encrypt secret");
 
-    // Ensure clean state
-    cleanup_test_file(&format!("{}.slock", secret_name));
+    // Export secrets
+    export::export("env", export_file.to_str())
+        .expect("Failed to export secrets");
 
-    // Simulate stdin with a Cursor
-    let mut stdin_mock = Cursor::new(secret_value);
-    let mut input = String::new();
-    stdin_mock
-        .read_to_string(&mut input)
-        .expect("Failed to read from mock stdin");
-
-    let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
-    let expiration_days = Some(30);
-    // Encrypt using simulated input
-    encrypt::encrypt(&input, secret_name, tags, expiration_days)
-        .expect("Failed to encrypt from stdin");
-
-    // Verify file was created
+    // Verify export file exists
     assert!(
-        encrypted_file.exists(),
-        "Encrypted file wasn't created: {:?}",
-        encrypted_file
+        export_file.exists(),
+        "Export file was not created: {:?}",
+        export_file
     );
 
-    // Clean up
-    cleanup_test_file(&format!("{}.slock", secret_name));
+    // Verify content of the export file
+    let exported_content = fs::read_to_string(&export_file).expect("Failed to read export file");
+    println!("Exported file content: \n{}", exported_content);
+    assert!(
+        exported_content.contains(&format!("{}=$(smart-locker decrypt -n {})", secret_name, secret_name)),
+        "Exported content is incorrect: {}",
+        exported_content
+    );
+    // Nettoyage des variables d'environnement
+    cleanup_environment_variables();
 }
 
 #[test]
-fn test_decrypt_with_stdout() {
-    let locker_dir = setup_test_environment();
+#[serial]
+fn test_renew_secret() {
+    let locker_dir = setup_and_initialize();
+    let secret_name = "test_renew_secret";
+    let secret_value = "renew_test_value";
 
-    let secret_name = "test_decrypt_with_stdout_secret";
-    let secret_value = "Ceci est un test";
-    let _encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
+    // Encrypt a secret
+    let tags: Vec<String> = ["renew", "test"].iter().map(|&s| s.to_string()).collect();
+    encrypt::encrypt(secret_value, secret_name, tags, Some(1)).expect("Failed to encrypt secret");
 
-    // Ensure clean state
-    cleanup_test_file(&format!("{}.slock", secret_name));
+    // Print expiration before renewal
+    let metadata = fs::read_to_string(locker_dir.join("metadata.json"))
+        .expect("Failed to read metadata file");
+    println!("Metadata before renewal: {}", metadata);
 
-    let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
-    let expiration_days = Some(30);
-    // Encrypt the secret
-    encrypt::encrypt(secret_value, secret_name, tags, expiration_days)
-        .expect("Failed to encrypt secret");
+    // Renew the secret
+    renew::renew_secret(secret_name, 30).expect("Failed to renew secret");
 
-    // Decrypt and verify
-    let decrypted_value = decrypt::decrypt(secret_name).expect("Failed to decrypt secret");
+    // Print expiration after renewal
+    let updated_metadata = fs::read_to_string(locker_dir.join("metadata.json"))
+        .expect("Failed to read updated metadata file");
+    println!("Metadata after renewal: {}", updated_metadata);
+
+    // Verify the secret is still decryptable
+    let decrypted_value = decrypt::decrypt(secret_name).expect("Failed to decrypt renewed secret");
     assert_eq!(
         decrypted_value, secret_value,
-        "Decrypted value doesn't match original"
+        "Decrypted value doesn't match original after renewal"
     );
-
-    // Clean up
-    cleanup_test_file(&format!("{}.slock", secret_name));
-}
-
-#[cfg(not(feature = "disable_clipboard_tests"))]
-#[test]
-fn test_decrypt_with_clipboard() {
-    use copypasta::{ClipboardContext, ClipboardProvider};
-
-    // Skip test if environment variable is set
-    if std::env::var("DISABLE_CLIPBOARD_TESTS").is_ok() {
-        eprintln!("🛑 Clipboard test skipped via env var");
-        return;
-    }
-
-    let locker_dir = setup_test_environment();
-
-    let secret_name = "test_decrypt_with_clipboard_secret";
-    let secret_value = "Ceci est un test";
-    let _encrypted_file = locker_dir.join(format!("{}.slock", secret_name));
-
-    // Ensure clean state
-    cleanup_test_file(&format!("{}.slock", secret_name));
-
-    let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
-    let expiration_days = Some(30);
-    // Encrypt the secret
-    encrypt::encrypt(secret_value, secret_name, tags, expiration_days)
-        .expect("Failed to encrypt secret");
-
-    // Decrypt and verify clipboard
-    let decrypted_value = decrypt::decrypt(secret_name).expect("Failed to decrypt secret");
-
-    // Test clipboard functionality
-    let mut ctx = match ClipboardContext::new() {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Unable to access clipboard, skipping test: {}", e);
-            cleanup_test_file(&format!("{}.slock", secret_name));
-            return;
-        }
-    };
-
-    if let Err(e) = ctx.set_contents(decrypted_value.clone()) {
-        eprintln!("Failed to set clipboard contents: {}", e);
-        cleanup_test_file(&format!("{}.slock", secret_name));
-        return;
-    }
-
-    match ctx.get_contents() {
-        Ok(clipboard_content) => {
-            assert_eq!(
-                clipboard_content, secret_value,
-                "Clipboard content doesn't match original"
-            );
-        }
-        Err(e) => {
-            eprintln!("Failed to get clipboard contents: {}", e);
-        }
-    }
-
-    // Clean up
-    cleanup_test_file(&format!("{}.slock", secret_name));
+    // Nettoyage des variables d'environnement
+    cleanup_environment_variables();
 }

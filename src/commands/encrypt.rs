@@ -1,12 +1,10 @@
 use crate::utils::metadata::{read_metadata, write_metadata};
+use crate::utils::config::EncryptionConfig;
 use crate::utils::toolbox::get_locker_dir;
 use crate::MetadataFile;
 use crate::{LockerResult, SecretMetadata, SmartLockerError};
-use aes_gcm::aead::{Aead, KeyInit};
-use aes_gcm::{Aes256Gcm, Key, Nonce};
+use aes_gcm::aead::Aead;
 use colored::Colorize;
-use flate2::write::GzEncoder;
-use flate2::Compression;
 use std::fs;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -17,6 +15,7 @@ pub fn encrypt(
     tags: Vec<String>,
     expiration_days: Option<u64>,
 ) -> LockerResult<()> {
+    let config = EncryptionConfig::new();
     let locker_dir = get_locker_dir()?;
     let key_path = locker_dir.join("locker.key");
 
@@ -24,15 +23,15 @@ pub fn encrypt(
     let key_data = fs::read(&key_path).map_err(|e| {
         SmartLockerError::FileSystemError(format!("Unable to read symmetric key: {}", e))
     })?;
-    let key = Key::<Aes256Gcm>::from_slice(&key_data);
-    let cipher = Aes256Gcm::new(key);
+    let cipher = config.init_cipher(&key_data).map_err(|e| {
+        SmartLockerError::EncryptionError(e)
+    })?;
 
     // Générer un nonce aléatoire
-    let random_bytes = rand::random::<[u8; 12]>();
-    let nonce = Nonce::from_slice(&random_bytes);
+    let nonce = config.generate_nonce();
 
     // Compresser les données
-    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    let mut encoder = config.init_compressor();
     encoder.write_all(secret.as_bytes()).map_err(|e| {
         SmartLockerError::EncryptionError(format!("Error during data compression: {}", e))
     })?;
@@ -42,17 +41,20 @@ pub fn encrypt(
 
     // Chiffrer les données
     let ciphertext = cipher
-        .encrypt(nonce, compressed_data.as_ref())
+        .encrypt(&nonce, compressed_data.as_ref())
         .map_err(|e| {
             SmartLockerError::EncryptionError(format!("Error during encryption: {}", e))
         })?;
 
+    // Ajouter une signature versionnée
+    let mut output_data = Vec::new();
+    output_data.extend_from_slice(config.signature); // Ajouter la signature
+    output_data.push(config.format_version); // Ajouter la version
+    output_data.extend_from_slice(&nonce); // Ajouter le nonce
+    output_data.extend_from_slice(&ciphertext); // Ajouter les données chiffrées
+
     // Écrire les données chiffrées dans le fichier .slock
     let output_path = locker_dir.join(format!("{}.slock", name));
-    let mut output_data = Vec::new();
-    output_data.extend_from_slice(nonce);
-    output_data.extend_from_slice(&ciphertext);
-
     fs::write(&output_path, output_data).map_err(|e| {
         SmartLockerError::FileSystemError(format!("Error when writing encrypted file: {}", e))
     })?;
@@ -88,3 +90,4 @@ pub fn encrypt(
     );
     Ok(())
 }
+

@@ -55,6 +55,9 @@ colored = "3.0"
 flate2 = "1.0"
 thiserror = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
+ctor = "0.1"
+uuid = { version = "1.2", features = ["v4"] }
+serial_test = "2.0"
 
 [features]
 default = []

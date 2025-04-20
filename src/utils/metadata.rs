@@ -7,6 +7,27 @@ use std::collections::HashMap;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+
+
+pub fn init_metadata_file() -> Result<(), SmartLockerError> {
+    let metadata_path = get_locker_dir()?.join("metadata.json");
+    if !metadata_path.exists() {
+        let empty_metadata = MetadataFile {
+            secrets: Default::default(),
+        };
+        let metadata_json = serde_json::to_string_pretty(&empty_metadata).map_err(|e| {
+            SmartLockerError::FileSystemError(format!("Error serializing metadata: {}", e))
+        })?;
+        fs::write(metadata_path.clone(), metadata_json).map_err(|e| {
+            SmartLockerError::FileSystemError(format!("Error writing metadata file: {}", e))
+        })?;
+        println!("✅ Metadata file initialized: {:?}", metadata_path);
+    } else {
+        println!("🔍 Metadata file already exists: {:?}", metadata_path);
+    }
+    Ok(())
+}
+
 pub fn read_metadata() -> Result<MetadataFile, SmartLockerError> {
     let locker_dir = get_locker_dir()?;
     let metadata_path = locker_dir.join("metadata.json");
@@ -33,6 +54,28 @@ pub fn write_metadata(metadata: &MetadataFile) -> Result<(), SmartLockerError> {
     fs::write(metadata_path, content).map_err(|e| {
         SmartLockerError::FileSystemError(format!("Error writing metadata file: {}", e))
     })
+}
+
+pub fn remove_metadata(secret_name: Option<&str>, metadata: &mut MetadataFile) -> Result<(), SmartLockerError> {
+    match secret_name {
+        Some(name) => {
+            if metadata.secrets.remove(name).is_some() {
+                write_metadata(metadata)?;
+                Ok(())
+            } else {
+                Err(SmartLockerError::FileSystemError(format!(
+                    "Metadata for secret '{}' not found.",
+                    name
+                )))
+            }
+        }
+        None => {
+            // Supprimer toutes les métadonnées
+            metadata.secrets.clear();
+            write_metadata(metadata)?;
+            Ok(())
+        }
+    }
 }
 
 pub fn update_secret_metadata<F>(
@@ -111,4 +154,16 @@ pub fn is_secret_expired(secret_metadata: &SecretMetadata) -> bool {
         .unwrap()
         .as_secs();
     now > secret_metadata.expire_at
+}
+
+pub fn update_secret_expiration(
+    secret_name: &str,
+    metadata: &mut MetadataFile,
+    new_expiration: u64,
+) -> Result<(), SmartLockerError> {
+    update_secret_metadata(secret_name, metadata, |secret_metadata| {
+        secret_metadata.expire_at = new_expiration;
+        secret_metadata.expired = false; // Marquer comme non expiré
+    })
+
 }
