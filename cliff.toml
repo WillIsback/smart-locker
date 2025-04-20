@@ -8,8 +8,12 @@
 [changelog]
 # template for the changelog header
 header = """
-# Changelog\n
-All notable changes to this project will be documented in this file.\n
+<!-- markdownlint-disable -->
+
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
 """
 # template for the changelog body
 # https://keats.github.io/tera/docs/#introduction

@@ -48,9 +48,9 @@ jobs:
       - name: 🔍 Extract Version
         id: extract_version
         run: |
-          version=$(echo "${GITHUB_REF##*/}" | sed 's/^v//')
-          echo "Version extraite : $version"
-          echo "version=$version" >> $GITHUB_ENV
+          VERSION=$(echo "${GITHUB_REF##*/}" | sed 's/^v//')
+          echo "Version extraite : $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: 📦 Build Binaries (Linux & Windows)
         run: |
@@ -66,7 +66,7 @@ jobs:
         run: |
           cargo build --release
           echo "Version utilisée pour .deb et .rpm : $VERSION"
-          cargo deb --fast --deb-version "$VERSION"
+          cargo deb --fast --deb-version ${{ env.VERSION }}
           cargo generate-rpm
 
       - name: 📤 Create GitHub Release
