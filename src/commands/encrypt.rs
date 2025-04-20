@@ -1,25 +1,22 @@
 use crate::utils::toolbox::get_locker_dir;
+use crate::SecretMetadata;
 use crate::SmartLockerError;
 use aes_gcm::aead::Aead;
 use aes_gcm::KeyInit;
 use aes_gcm::{Aes256Gcm, Key, Nonce};
 use flate2::write::GzEncoder;
 use flate2::Compression;
-use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fs;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-#[derive(Serialize, Deserialize)]
-struct SecretMetadata {
-    name: String,
-    created_at: u64,
-    modified_at: u64,
+pub fn encrypt(
+    secret: &str,
+    name: &str,
     tags: Vec<String>,
-}
-
-pub fn encrypt(secret: &str, name: &str, tags: Vec<String>) -> Result<(), SmartLockerError> {
+    expiration_days: Option<u64>,
+) -> Result<(), SmartLockerError> {
     let locker_dir = get_locker_dir()?;
     let key_path = locker_dir.join("locker.key");
 
@@ -59,12 +56,15 @@ pub fn encrypt(secret: &str, name: &str, tags: Vec<String>) -> Result<(), SmartL
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs();
+    let expiration = now + (expiration_days.unwrap_or(15) * 24 * 60 * 60); // Default to 15 days
     let metadata = SecretMetadata {
         name: name.to_string(),
         created_at: now,
-        modified_at: now,
+        expire_at: expiration,
+        expired: false,
         tags,
     };
+
     let metadata_path = locker_dir.join(format!("{}.meta.json", name));
     let metadata_json = serde_json::to_string(&metadata).map_err(|e| {
         SmartLockerError::FileSystemError(format!("Error serializing metadata: {}", e))

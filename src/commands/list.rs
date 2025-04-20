@@ -1,18 +1,9 @@
 use crate::utils::toolbox::get_locker_dir;
+use crate::SecretMetadata;
 use crate::SmartLockerError;
 use chrono::{DateTime, Utc}; // Ajout pour le formatage des dates
 use colored::Colorize;
 use std::fs;
-
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-struct SecretMetadata {
-    name: String,
-    created_at: u64,
-    modified_at: u64,
-    tags: Vec<String>,
-}
 
 pub fn list_secrets() -> Result<Vec<String>, SmartLockerError> {
     let locker_dir = get_locker_dir()?;
@@ -45,16 +36,21 @@ pub fn list_secrets() -> Result<Vec<String>, SmartLockerError> {
                             .format("%Y-%m-%d %H:%M:%S")
                             .to_string();
 
-                        let modified_at = DateTime::from_timestamp(metadata.modified_at as i64, 0)
+                        let expire_at = DateTime::from_timestamp(metadata.expire_at as i64, 0)
                             .unwrap_or_else(Utc::now)
                             .format("%Y-%m-%d %H:%M:%S")
                             .to_string();
 
                         secrets.push(format!(
-                            "Name: {}\n Created At: {}, Modified At: {}, Tags: {:?}",
-                            metadata.name.green(),
+                            "{}\n  Created At: {}  Expire At: {}  Status: {}  Tags: {:?}",
+                            metadata.name.blue(),
                             created_at,
-                            modified_at,
+                            expire_at,
+                            if metadata.expired {
+                                "Expired".red().to_string()
+                            } else {
+                                "Active".green().to_string()
+                            },
                             metadata.tags
                         ));
                     }

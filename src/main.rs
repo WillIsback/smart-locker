@@ -3,6 +3,7 @@ use clap::{Arg, Command};
 use colored::*; // For colored output
 use smart_locker::commands::{
     decrypt::decrypt, encrypt::encrypt, export::export, list::list_secrets, remove::remove_secret,
+    renew::renew_secret,
 };
 use smart_locker::utils::toolbox::{backup_key, init_locker_with_passphrase, restore_key};
 use std::io::Read;
@@ -28,12 +29,16 @@ fn main() {
             --name: Name of the secret.\n\
             --value: Value of the secret to encrypt.\n\
             --tags: Comma-separated tags for the secret (e.g., tag1,tag2).\n\
+            --expiration: Expiration date in days (default: 15).\n\
             If --value is not provided, the value will be read from stdin.\n\n\
         - decrypt: Decrypts a secret.\n\
             --name: Name of the secret to decrypt.\n\
             --clipboard: Copies the decrypted secret to the clipboard.\n\n\
         - list: Lists all available secrets.\n\
         - remove: Deletes a secret.\n\
+        - renew: Renews an expired secret.\n\
+            --name: Name of the secret to renew.\n\
+            --days: Number of additional days to extend the expiration (default: 15).\n\n\
         - backup-key: Creates a backup of the encryption key.\n\
         - restore-key: Restores the encryption key from a backup.\n\n\
         - export: Exports secrets to a file in a specified format.\n\
@@ -92,7 +97,9 @@ fn main() {
                 - Encrypt a secret with tags:\n\
                   smart-locker encrypt -n my_secret -v \"my value\" --tags \"tag1,tag2\"\n\
                 - Encrypt a secret by reading the value from stdin:\n\
-                  echo \"my value\" | smart-locker encrypt -n my_secret",
+                  echo \"my value\" | smart-locker encrypt -n my_secret,
+                - Encrypt a secret with an expiration of 30 days:\n\
+                  smart-locker encrypt -n my_secret -v \"my value\" --expiration 30\n"
                 )
                 .arg(
                     Arg::new("name")
@@ -117,6 +124,15 @@ fn main() {
                         .num_args(1)
                         .required(false)
                         .help("Comma-separated tags for the secret (e.g., tag1,tag2)"),
+                )
+                .arg(
+                    Arg::new("expiration")
+                        .short('e')
+                        .long("expiration")
+                        .num_args(1)
+                        .required(false)
+                        .default_value("15")
+                        .help("Expiration date in days (default: 15)"),
                 ),
         )
         .subcommand(
@@ -203,7 +219,35 @@ fn main() {
                         .help("Output file path (default: .env)"),
                 ),
         )
-        .get_matches();
+        .subcommand(
+            Command::new("renew")
+                .about("Renews an expired secret")
+                .long_about(
+                    "Renews an expired secret by extending its expiration date.\n\n\
+                EXAMPLES:\n\
+                - Renew an expired secret:\n\
+                  smart-locker renew -n my_secret -d 30\n\
+                - Renew an expired secret with a default expiration of 15 days:\n\
+                  smart-locker renew -n my_secret",
+                )
+                .arg(
+                    Arg::new("name")
+                        .short('n')
+                        .long("name")
+                        .num_args(1)
+                        .required(true)
+                        .help("Name of the secret to renew"),
+                )
+                .arg(
+                    Arg::new("days")
+                        .short('d')
+                        .long("days")
+                        .num_args(1)
+                        .required(false)
+                        .default_value("15")
+                        .help("Number of additional days to extend the expiration"),
+                ),
+        ).get_matches();
 
     if let Some(matches) = matches.subcommand_matches("init") {
         display_logo(); // Affiche le logo uniquement pour la commande init
@@ -236,10 +280,28 @@ fn main() {
             .map(|t| t.split(',').map(|s| s.trim().to_string()).collect())
             .unwrap_or_else(Vec::new);
 
-        match encrypt(&value, name, tags) {
+        let expiration: u64 = matches
+            .get_one::<String>("expiration")
+            .map(|s| {
+                s.trim().parse().unwrap_or_else(|_| {
+                    eprintln!(
+                        "{}",
+                        "Invalid expiration value, using default of 15 days".red()
+                    );
+                    15
+                })
+            })
+            .unwrap_or(15);
+
+        // Encrypt the secret
+        match encrypt(&value, name, tags, Some(expiration)) {
             Ok(_) => println!(
                 "{}",
-                format!("✅ Secret '{}' encrypted successfully!", name).green()
+                format!(
+                    "✅ Secret '{}' encrypted successfully with expiration of {} days!",
+                    name, expiration
+                )
+                .green()
             ),
             Err(err) => {
                 eprintln!("{}", format!("Error encrypting secret: {}", err).red());
@@ -338,6 +400,21 @@ fn main() {
             "{}",
             format!("✅ Secret '{}' deleted successfully!", name).green()
         );
+    } else if let Some(matches) = matches.subcommand_matches("renew") {
+        let name = matches.get_one::<String>("name").unwrap();
+        let days: u64 = matches
+            .get_one::<String>("days")
+            .unwrap()
+            .parse()
+            .expect("Invalid number of days");
+
+        match renew_secret(name, days) {
+            Ok(_) => println!("✅ Secret '{}' renewed successfully!", name),
+            Err(err) => {
+                eprintln!("{}", format!("Error renewing secret: {}", err).red());
+                exit(1);
+            }
+        }
     } else if matches.subcommand_matches("backup-key").is_some() {
         backup_key().expect("Failed to create a backup of the encryption key");
         println!("{}", "✅ Encryption key backed up successfully!".green());

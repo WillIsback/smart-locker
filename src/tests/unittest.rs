@@ -43,8 +43,10 @@ fn test_encrypt_and_decrypt() {
     // Ensure the test file doesn't exist before starting
     cleanup_test_file(&format!("{}.slock", secret_name));
     let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
+    let expiration_days = Some(30);
     // Encrypt the secret
-    encrypt::encrypt(secret_value, secret_name, tags).expect("Failed to encrypt secret");
+    encrypt::encrypt(secret_value, secret_name, tags, expiration_days)
+        .expect("Failed to encrypt secret");
 
     // Verify encrypted file exists
     assert!(
@@ -127,8 +129,10 @@ fn test_encrypt_with_stdin() {
         .expect("Failed to read from mock stdin");
 
     let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
+    let expiration_days = Some(30);
     // Encrypt using simulated input
-    encrypt::encrypt(&input, secret_name, tags).expect("Failed to encrypt from stdin");
+    encrypt::encrypt(&input, secret_name, tags, expiration_days)
+        .expect("Failed to encrypt from stdin");
 
     // Verify file was created
     assert!(
@@ -153,9 +157,10 @@ fn test_decrypt_with_stdout() {
     cleanup_test_file(&format!("{}.slock", secret_name));
 
     let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
-
+    let expiration_days = Some(30);
     // Encrypt the secret
-    encrypt::encrypt(secret_value, secret_name, tags).expect("Failed to encrypt secret");
+    encrypt::encrypt(secret_value, secret_name, tags, expiration_days)
+        .expect("Failed to encrypt secret");
 
     // Decrypt and verify
     let decrypted_value = decrypt::decrypt(secret_name).expect("Failed to decrypt secret");
@@ -189,9 +194,10 @@ fn test_decrypt_with_clipboard() {
     cleanup_test_file(&format!("{}.slock", secret_name));
 
     let tags: Vec<String> = ["test1", "test2"].iter().map(|&s| s.to_string()).collect();
-
+    let expiration_days = Some(30);
     // Encrypt the secret
-    encrypt::encrypt(secret_value, secret_name, tags).expect("Failed to encrypt secret");
+    encrypt::encrypt(secret_value, secret_name, tags, expiration_days)
+        .expect("Failed to encrypt secret");
 
     // Decrypt and verify clipboard
     let decrypted_value = decrypt::decrypt(secret_name).expect("Failed to decrypt secret");

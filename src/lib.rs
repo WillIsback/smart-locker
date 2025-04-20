@@ -1,9 +1,12 @@
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
+
 pub type LockerResult<T> = Result<T, SmartLockerError>;
 
 pub mod commands;
 pub use crate::commands::{
     decrypt::decrypt, encrypt::encrypt, export::export, list::list_secrets, remove::remove_secret,
+    renew::renew_secret,
 };
 pub mod utils;
 pub use crate::utils::toolbox::{
@@ -22,4 +25,13 @@ pub enum SmartLockerError {
     InitializationError(String),
     #[error("Unknown error: {0}")]
     UnknownError(String),
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct SecretMetadata {
+    name: String,
+    created_at: u64,
+    expire_at: u64,
+    expired: bool,
+    tags: Vec<String>,
 }
