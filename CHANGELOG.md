@@ -2,7 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.9] - 2025-04-20
 
+### 🐛 Bug Fixes
+
+- *(release)* Remove pre-release hook in cargo-release.toml
+
+## [0.2.8] - 2025-04-20
+
+### 🐛 Bug Fixes
+
+- *(release)* Extract version from tag for .deb and .rpm builds
+
+### 📚 Documentation
+
+- Mise à jour du changelog pour la version 2.0.0
+- Mise à jour du changelog pour la version 2.0.0
+
+### ⚙️ Miscellaneous Tasks
+
+- Release smart-locker version 0.2.8
 
 ## [0.2.7] - 2025-04-20
 
