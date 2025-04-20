@@ -26,6 +26,7 @@ jobs:
       - name: 🔨 Build & Test
         run: |
           cargo build --release
+          cargo run init
           cargo test --release --features disable_clipboard_tests
 
   # 📦 Release uniquement sur tags (v*.*.*)
