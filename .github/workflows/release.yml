@@ -60,10 +60,6 @@ jobs:
           cargo deb --fast
           cargo generate-rpm
 
-      - name: 📝 Generate Changelog
-        run: |
-          git cliff --tag "${{ github.ref_name }}" -o CHANGELOG.md
-
       - name: 📤 Create GitHub Release
         uses: actions/create-release@v1.1.4
         id: create_release
