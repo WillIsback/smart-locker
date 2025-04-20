@@ -35,7 +35,7 @@ pub enum SmartLockerError {
     UnknownError(String),
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SecretMetadata {
     name: String,
     created_at: u64,
@@ -70,7 +70,7 @@ impl SecretMetadata {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct MetadataFile {
     pub secrets: HashMap<String, SecretMetadata>, // Clé : nom du secret
 }
