@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.7] - 2025-04-20
+
+### 🐛 Bug Fixes
+
+- *(ci)* Update .deb build step to include versioning from tag
+
+### ⚙️ Miscellaneous Tasks
+
+- Update pre-release hook path and enhance changelog for version 0.2.6
+- Release smart-locker version 0.2.7
+
 ## [0.2.6] - 2025-04-20
 
 ### ⚙️ Miscellaneous Tasks
